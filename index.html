@@ -1,0 +1,763 @@
+	<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>IsidoreAI</title>
+
+<!-- Noto Serif -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- MathJax -->
+<script>
+window.MathJax = {
+    tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']]
+    },
+    svg: {
+        fontCache: 'global'
+    }
+};
+</script>
+
+<script
+    async
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+</script>
+
+<style>
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    background: #ffffff;
+    color: #202123;
+    font-family: "Noto Serif", Georgia, serif;
+}
+
+/* HEADER */
+
+header {
+    height: 60px;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    border-bottom: 1px solid #e5e5e5;
+    background: #ffffff;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.logo {
+    font-size: 21px;
+    font-weight: 700;
+}
+
+.logo span {
+    font-weight: 400;
+}
+
+/* PAGE */
+
+main {
+    max-width: 900px;
+    margin: auto;
+    padding: 45px 20px 120px;
+}
+
+/* WELCOME */
+
+.welcome {
+    text-align: center;
+    margin-bottom: 45px;
+}
+
+.welcome h1 {
+    margin: 0 0 12px;
+    font-size: 34px;
+    font-weight: 700;
+}
+
+.welcome p {
+    margin: 0;
+    color: #777;
+    font-size: 17px;
+}
+
+/* CONVERSATION */
+
+#conversation {
+    width: 100%;
+}
+
+/* USER MESSAGE */
+
+.user-block {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin-bottom: 35px;
+}
+
+.user-name {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #555;
+}
+
+.user-message {
+    max-width: 80%;
+    background: #f1f1f1;
+    padding: 13px 17px;
+    border-radius: 18px;
+    font-size: 16px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+}
+
+/* AI ANSWER */
+
+.ai-block {
+    width: 100%;
+    margin-bottom: 45px;
+}
+
+.ai-name {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 14px;
+}
+
+.ai-answer {
+    width: 100%;
+    font-size: 17px;
+    line-height: 1.85;
+    color: #202123;
+}
+
+/* TEXT FORMATTING */
+
+.ai-answer h1,
+.ai-answer h2,
+.ai-answer h3 {
+    font-weight: 700;
+    line-height: 1.35;
+    margin-top: 25px;
+    margin-bottom: 12px;
+}
+
+.ai-answer h1 {
+    font-size: 28px;
+}
+
+.ai-answer h2 {
+    font-size: 23px;
+}
+
+.ai-answer h3 {
+    font-size: 20px;
+}
+
+.ai-answer p {
+    margin: 0 0 16px;
+}
+
+.ai-answer ul,
+.ai-answer ol {
+    padding-left: 28px;
+    margin-top: 10px;
+    margin-bottom: 18px;
+}
+
+.ai-answer li {
+    margin-bottom: 8px;
+}
+
+.ai-answer strong {
+    font-weight: 700;
+}
+
+.ai-answer code {
+    background: #f3f3f3;
+    padding: 2px 6px;
+    border-radius: 5px;
+    font-family: monospace;
+}
+
+/* FORMULA */
+
+.ai-answer mjx-container[display="true"] {
+    margin: 25px 0 !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+/* INPUT */
+
+.input-area {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255,255,255,.96);
+    border-top: 1px solid #e5e5e5;
+    padding: 12px 15px;
+    backdrop-filter: blur(8px);
+}
+
+.input-inner {
+    max-width: 900px;
+    margin: auto;
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    border: 1px solid #ccc;
+    border-radius: 17px;
+    padding: 8px;
+    background: #fff;
+}
+
+textarea {
+    flex: 1;
+    border: 0;
+    outline: none;
+    resize: none;
+    min-height: 45px;
+    max-height: 180px;
+    padding: 10px;
+    font-family: "Noto Serif", Georgia, serif;
+    font-size: 16px;
+    line-height: 1.5;
+    color: #202123;
+}
+
+textarea::placeholder {
+    color: #999;
+}
+
+button {
+    width: 45px;
+    height: 45px;
+    border: 0;
+    border-radius: 12px;
+    background: #202123;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+button:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+/* LOADING */
+
+.loading {
+    display: inline-flex;
+    gap: 5px;
+    margin-top: 5px;
+}
+
+.loading span {
+    width: 7px;
+    height: 7px;
+    background: #777;
+    border-radius: 50%;
+    animation: bounce 1.2s infinite;
+}
+
+.loading span:nth-child(2) {
+    animation-delay: .15s;
+}
+
+.loading span:nth-child(3) {
+    animation-delay: .3s;
+}
+
+@keyframes bounce {
+    0%, 60%, 100% {
+        transform: translateY(0);
+    }
+
+    30% {
+        transform: translateY(-6px);
+    }
+}
+
+/* MOBILE */
+
+@media (max-width: 600px) {
+
+    header {
+        padding: 0 15px;
+    }
+
+    main {
+        padding: 32px 16px 120px;
+    }
+
+    .welcome h1 {
+        font-size: 27px;
+    }
+
+    .welcome p {
+        font-size: 15px;
+    }
+
+    .user-message {
+        max-width: 88%;
+        font-size: 15px;
+    }
+
+    .ai-answer {
+        font-size: 16px;
+        line-height: 1.8;
+    }
+
+    .ai-answer h1 {
+        font-size: 25px;
+    }
+
+    .ai-answer h2 {
+        font-size: 21px;
+    }
+
+    .ai-answer h3 {
+        font-size: 19px;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+
+<div class="logo">
+🤖 Isidore<span>AI</span>
+</div>
+
+</header>
+
+
+<main>
+
+<section class="welcome">
+
+<h1>Bonjour, je suis IsidoreAI</h1>
+
+<p>Que voulez-vous savoir aujourd'hui ?</p>
+
+</section>
+
+
+<section id="conversation"></section>
+
+</main>
+
+
+<div class="input-area">
+
+<div class="input-inner">
+
+<textarea
+id="question"
+placeholder="Écrivez votre question..."
+rows="1"
+></textarea>
+
+<button id="sendButton" onclick="envoyer()">➤</button>
+
+</div>
+
+</div>
+
+
+<script>
+
+/* ================================
+   ELEMENTS
+================================ */
+
+const zone = document.getElementById("question");
+const conversation = document.getElementById("conversation");
+const sendButton = document.getElementById("sendButton");
+
+
+/* ================================
+   AJOUTER QUESTION
+================================ */
+
+function ajouterQuestion(question) {
+
+    const bloc = document.createElement("div");
+
+    bloc.className = "user-block";
+
+    bloc.innerHTML = `
+        <div class="user-name">Vous</div>
+        <div class="user-message"></div>
+    `;
+
+    bloc.querySelector(".user-message").textContent = question;
+
+    conversation.appendChild(bloc);
+
+    return bloc;
+}
+
+
+/* ================================
+   AJOUTER REPONSE IA
+================================ */
+
+function ajouterReponse() {
+
+    const bloc = document.createElement("div");
+
+    bloc.className = "ai-block";
+
+    bloc.innerHTML = `
+        <div class="ai-name">IsidoreAI</div>
+        <div class="ai-answer"></div>
+    `;
+
+    conversation.appendChild(bloc);
+
+    return bloc.querySelector(".ai-answer");
+}
+
+
+/* ================================
+   FORMATAGE REPONSE
+================================ */
+
+function formatAI(text) {
+
+    let safe = text;
+
+    /*
+       1. Protéger les formules LaTeX
+    */
+
+    const formulas = [];
+
+    function proteger(formula) {
+        const id = `___FORMULA_${formulas.length}___`;
+        formulas.push(formula);
+        return id;
+    }
+
+    /*
+       $$ ... $$  → formule affichée
+    */
+
+    safe = safe.replace(
+        /\$\$([\s\S]*?)\$\$/g,
+        function(match, formula) {
+            return proteger("\\[" + formula.trim() + "\\]");
+        }
+    );
+
+    /*
+       \[ ... \] → formule affichée
+    */
+
+    safe = safe.replace(
+        /\\\[([\s\S]*?)\\\]/g,
+        function(match, formula) {
+            return proteger("\\[" + formula.trim() + "\\]");
+        }
+    );
+
+    /*
+       $ ... $ → formule dans le texte
+    */
+
+    safe = safe.replace(
+        /(?<!\$)\$([^$\n]+?)\$(?!\$)/g,
+        function(match, formula) {
+            return proteger("\\(" + formula.trim() + "\\)");
+        }
+    );
+
+    /*
+       \( ... \) → formule dans le texte
+    */
+
+    safe = safe.replace(
+        /\\\(([\s\S]*?)\\\)/g,
+        function(match, formula) {
+            return proteger("\\(" + formula.trim() + "\\)");
+        }
+    );
+
+
+    /*
+       2. Sécurité HTML
+    */
+
+    safe = safe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+
+
+    /*
+       3. Titres
+    */
+
+    safe = safe.replace(
+        /^### (.*)$/gm,
+        "<h3>$1</h3>"
+    );
+
+    safe = safe.replace(
+        /^## (.*)$/gm,
+        "<h2>$1</h2>"
+    );
+
+    safe = safe.replace(
+        /^# (.*)$/gm,
+        "<h1>$1</h1>"
+    );
+
+
+    /*
+       4. Gras
+    */
+
+    safe = safe.replace(
+        /\*\*(.*?)\*\*/g,
+        "<strong>$1</strong>"
+    );
+
+
+    /*
+       5. Listes
+    */
+
+    safe = safe.replace(
+        /^\s*[-•*] (.*)$/gm,
+        "<li>$1</li>"
+    );
+
+    safe = safe.replace(
+        /(<li>.*?<\/li>(?:<br>)?)+/gs,
+        function(match) {
+            return "<ul>" + match + "</ul>";
+        }
+    );
+
+
+    /*
+       6. Retours à la ligne
+    */
+
+    safe = safe.replace(/\n\n+/g, "<br><br>");
+    safe = safe.replace(/\n/g, "<br>");
+
+
+    /*
+       7. Restaurer les formules
+    */
+
+    formulas.forEach(function(formula, index) {
+
+        const id = `___FORMULA_${index}___`;
+
+        safe = safe.replace(
+            id,
+            formula
+        );
+
+    });
+
+
+    return safe;
+}
+
+/* ================================
+   ENVOYER
+================================ */
+
+async function envoyer() {
+
+    const question = zone.value.trim();
+
+    if (!question) {
+        return;
+    }
+
+    /*
+       Afficher immédiatement la question
+    */
+
+    ajouterQuestion(question);
+
+    zone.value = "";
+    zone.style.height = "auto";
+
+    sendButton.disabled = true;
+    zone.disabled = true;
+
+    /*
+       Créer la réponse
+    */
+
+    const answerElement = ajouterReponse();
+
+    answerElement.innerHTML = `
+        <div class="loading">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+    `;
+
+    faireDefiler();
+
+
+    try {
+
+        const response = await fetch("/api/solve", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                problem: question
+            })
+
+        });
+
+
+        const data = await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.error || "Erreur du serveur"
+            );
+
+        }
+
+
+        /*
+           Afficher la vraie réponse
+        */
+
+        answerElement.innerHTML =
+            formatAI(
+                data.answer ||
+                "Aucune réponse reçue."
+            );
+
+
+        /*
+           Demander à MathJax
+           de rendre les formules
+        */
+
+        if (window.MathJax) {
+
+            MathJax.typesetPromise([
+                answerElement
+            ]);
+
+        }
+
+
+    } catch (error) {
+
+        answerElement.innerHTML =
+            "<strong>❌ Erreur :</strong> " +
+            error.message;
+
+    }
+
+
+    sendButton.disabled = false;
+    zone.disabled = false;
+    zone.focus();
+
+    faireDefiler();
+
+}
+
+
+/* ================================
+   SCROLL
+================================ */
+
+function faireDefiler() {
+
+    setTimeout(() => {
+
+        window.scrollTo({
+            top: document.body.scrollHeight,
+            behavior: "smooth"
+        });
+
+    }, 100);
+
+}
+
+
+/* ================================
+   TEXTAREA AUTOMATIQUE
+================================ */
+
+zone.addEventListener("input", function() {
+
+    this.style.height = "auto";
+
+    this.style.height =
+        Math.min(this.scrollHeight, 180) + "px";
+
+});
+
+
+/* ================================
+   ENTRÉE
+================================ */
+
+zone.addEventListener("keydown", function(event) {
+
+    if (
+        event.key === "Enter" &&
+        !event.shiftKey
+    ) {
+
+        event.preventDefault();
+
+        envoyer();
+
+    }
+
+});
+
+</script>
+
+</body>
+</html>
+
