@@ -399,11 +399,10 @@ async (req, res) => {
 
 
     const filePath =
-        path.join(
-            __dirname,
-            requestedPath
-        );
-
+    path.join(
+        __dirname,
+        "." + requestedPath
+    );
 
     fs.readFile(
         filePath,
