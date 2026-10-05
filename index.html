@@ -1,4 +1,4 @@
-	<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -24,10 +24,7 @@ window.MathJax = {
 };
 </script>
 
-<script
-    async
-    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
-</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
 
 <style>
 
@@ -126,6 +123,7 @@ main {
     font-size: 16px;
     line-height: 1.6;
     white-space: pre-wrap;
+    overflow-wrap: anywhere;
 }
 
 /* AI ANSWER */
@@ -146,6 +144,7 @@ main {
     font-size: 17px;
     line-height: 1.85;
     color: #202123;
+    overflow-wrap: anywhere;
 }
 
 /* TEXT FORMATTING */
@@ -354,106 +353,55 @@ button:disabled {
 
 </header>
 
-
 <main>
 
 <section class="welcome">
-
-<h1>Bonjour, je suis IsidoreAI</h1>
-
-<p>Que voulez-vous savoir aujourd'hui ?</p>
-
+    <h1>Bonjour, je suis IsidoreAI</h1>
+    <p>Que voulez-vous savoir aujourd'hui ?</p>
 </section>
-
 
 <section id="conversation"></section>
 
 </main>
 
-
 <div class="input-area">
-
-<div class="input-inner">
-
-<textarea
-id="question"
-placeholder="Écrivez votre question..."
-rows="1"
-></textarea>
-
-<button id="sendButton" onclick="envoyer()">➤</button>
-
+    <div class="input-inner">
+        <textarea id="question" placeholder="Écrivez votre question..." rows="1"></textarea>
+        <button id="sendButton" type="button" onclick="envoyer()">➤</button>
+    </div>
 </div>
-
-</div>
-
 
 <script>
-
-/* ================================
-   ELEMENTS
-================================ */
 
 const zone = document.getElementById("question");
 const conversation = document.getElementById("conversation");
 const sendButton = document.getElementById("sendButton");
 
-
-/* ================================
-   AJOUTER QUESTION
-================================ */
-
 function ajouterQuestion(question) {
-
     const bloc = document.createElement("div");
-
     bloc.className = "user-block";
-
     bloc.innerHTML = `
         <div class="user-name">Vous</div>
         <div class="user-message"></div>
     `;
-
     bloc.querySelector(".user-message").textContent = question;
-
     conversation.appendChild(bloc);
-
     return bloc;
 }
 
-
-/* ================================
-   AJOUTER REPONSE IA
-================================ */
-
 function ajouterReponse() {
-
     const bloc = document.createElement("div");
-
     bloc.className = "ai-block";
-
     bloc.innerHTML = `
         <div class="ai-name">IsidoreAI</div>
         <div class="ai-answer"></div>
     `;
-
     conversation.appendChild(bloc);
-
     return bloc.querySelector(".ai-answer");
 }
 
-
-/* ================================
-   FORMATAGE REPONSE
-================================ */
-
 function formatAI(text) {
-
-    let safe = text;
-
-    /*
-       1. Protéger les formules LaTeX
-    */
+    let safe = String(text ?? "");
 
     const formulas = [];
 
@@ -463,150 +411,80 @@ function formatAI(text) {
         return id;
     }
 
-    /*
-       $$ ... $$  → formule affichée
-    */
+    safe = safe.replace(/\$\$([\s\S]*?)\$\$/g, function(match, formula) {
+        return proteger("\\[" + formula.trim() + "\\]");
+    });
 
-    safe = safe.replace(
-        /\$\$([\s\S]*?)\$\$/g,
-        function(match, formula) {
-            return proteger("\\[" + formula.trim() + "\\]");
-        }
-    );
+    safe = safe.replace(/\\\[([\s\S]*?)\\\]/g, function(match, formula) {
+        return proteger("\\[" + formula.trim() + "\\]");
+    });
 
-    /*
-       \[ ... \] → formule affichée
-    */
+    safe = safe.replace(/(?<!\$)\$([^$\n]+?)\$(?!\$)/g, function(match, formula) {
+        return proteger("\\(" + formula.trim() + "\\)");
+    });
 
-    safe = safe.replace(
-        /\\\[([\s\S]*?)\\\]/g,
-        function(match, formula) {
-            return proteger("\\[" + formula.trim() + "\\]");
-        }
-    );
-
-    /*
-       $ ... $ → formule dans le texte
-    */
-
-    safe = safe.replace(
-        /(?<!\$)\$([^$\n]+?)\$(?!\$)/g,
-        function(match, formula) {
-            return proteger("\\(" + formula.trim() + "\\)");
-        }
-    );
-
-    /*
-       \( ... \) → formule dans le texte
-    */
-
-    safe = safe.replace(
-        /\\\(([\s\S]*?)\\\)/g,
-        function(match, formula) {
-            return proteger("\\(" + formula.trim() + "\\)");
-        }
-    );
-
-
-    /*
-       2. Sécurité HTML
-    */
+    safe = safe.replace(/\\\(([\s\S]*?)\\\)/g, function(match, formula) {
+        return proteger("\\(" + formula.trim() + "\\)");
+    });
 
     safe = safe
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
 
+    safe = safe.replace(/^### (.*)$/gm, "<h3>$1</h3>");
+    safe = safe.replace(/^## (.*)$/gm, "<h2>$1</h2>");
+    safe = safe.replace(/^# (.*)$/gm, "<h1>$1</h1>");
 
-    /*
-       3. Titres
-    */
+    safe = safe.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
 
-    safe = safe.replace(
-        /^### (.*)$/gm,
-        "<h3>$1</h3>"
-    );
-
-    safe = safe.replace(
-        /^## (.*)$/gm,
-        "<h2>$1</h2>"
-    );
-
-    safe = safe.replace(
-        /^# (.*)$/gm,
-        "<h1>$1</h1>"
-    );
-
-
-    /*
-       4. Gras
-    */
-
-    safe = safe.replace(
-        /\*\*(.*?)\*\*/g,
-        "<strong>$1</strong>"
-    );
-
-
-    /*
-       5. Listes
-    */
-
-    safe = safe.replace(
-        /^\s*[-•*] (.*)$/gm,
-        "<li>$1</li>"
-    );
-
-    safe = safe.replace(
-        /(<li>.*?<\/li>(?:<br>)?)+/gs,
-        function(match) {
-            return "<ul>" + match + "</ul>";
-        }
-    );
-
-
-    /*
-       6. Retours à la ligne
-    */
+    safe = safe.replace(/^\s*[-•*] (.*)$/gm, "<li>$1</li>");
+    safe = safe.replace(/(<li>.*?<\/li>(?:<br>)?)+/gs, function(match) {
+        return "<ul>" + match + "</ul>";
+    });
 
     safe = safe.replace(/\n\n+/g, "<br><br>");
     safe = safe.replace(/\n/g, "<br>");
 
-
-    /*
-       7. Restaurer les formules
-    */
-
     formulas.forEach(function(formula, index) {
-
         const id = `___FORMULA_${index}___`;
-
-        safe = safe.replace(
-            id,
-            formula
-        );
-
+        safe = safe.replace(id, formula);
     });
-
 
     return safe;
 }
 
-/* ================================
-   ENVOYER
-================================ */
+function extraireTexteReponse(payload) {
+    if (typeof payload === "string") {
+        return payload;
+    }
+
+    if (payload && typeof payload === "object") {
+        const candidates = [
+            payload.answer,
+            payload.response,
+            payload.result,
+            payload.output,
+            payload.message,
+            payload.text
+        ];
+
+        for (const candidate of candidates) {
+            if (typeof candidate === "string" && candidate.trim()) {
+                return candidate;
+            }
+        }
+    }
+
+    return "Aucune réponse reçue.";
+}
 
 async function envoyer() {
-
     const question = zone.value.trim();
 
     if (!question) {
         return;
     }
-
-    /*
-       Afficher immédiatement la question
-    */
 
     ajouterQuestion(question);
 
@@ -616,12 +494,7 @@ async function envoyer() {
     sendButton.disabled = true;
     zone.disabled = true;
 
-    /*
-       Créer la réponse
-    */
-
     const answerElement = ajouterReponse();
-
     answerElement.innerHTML = `
         <div class="loading">
             <span></span>
@@ -632,132 +505,65 @@ async function envoyer() {
 
     faireDefiler();
 
-
     try {
-
         const response = await fetch("/api/solve", {
-
             method: "POST",
-
             headers: {
                 "Content-Type": "application/json"
             },
-
-            body: JSON.stringify({
-                problem: question
-            })
-
+            body: JSON.stringify({ problem: question })
         });
 
+        let data;
 
-        const data = await response.json();
-
+        try {
+            data = await response.json();
+        } catch (jsonError) {
+            throw new Error("Le serveur a répondu avec une réponse invalide.");
+        }
 
         if (!response.ok) {
-
-            throw new Error(
-                data.error || "Erreur du serveur"
-            );
-
+            throw new Error(data?.error || "Erreur du serveur");
         }
 
-
-        /*
-           Afficher la vraie réponse
-        */
-
-        answerElement.innerHTML =
-            formatAI(
-                data.answer ||
-                "Aucune réponse reçue."
-            );
-
-
-        /*
-           Demander à MathJax
-           de rendre les formules
-        */
+        const answerText = extraireTexteReponse(data);
+        answerElement.innerHTML = formatAI(answerText);
 
         if (window.MathJax) {
-
-            MathJax.typesetPromise([
-                answerElement
-            ]);
-
+            MathJax.typesetPromise([answerElement]);
         }
-
-
     } catch (error) {
-
-        answerElement.innerHTML =
-            "<strong>❌ Erreur :</strong> " +
-            error.message;
-
+        answerElement.innerHTML = "<strong>❌ Erreur :</strong> " + (error?.message || "Une erreur inconnue s'est produite.");
+    } finally {
+        sendButton.disabled = false;
+        zone.disabled = false;
+        zone.focus();
+        faireDefiler();
     }
-
-
-    sendButton.disabled = false;
-    zone.disabled = false;
-    zone.focus();
-
-    faireDefiler();
-
 }
 
-
-/* ================================
-   SCROLL
-================================ */
-
 function faireDefiler() {
-
     setTimeout(() => {
-
         window.scrollTo({
             top: document.body.scrollHeight,
             behavior: "smooth"
         });
-
     }, 100);
-
 }
 
-
-/* ================================
-   TEXTAREA AUTOMATIQUE
-================================ */
-
 zone.addEventListener("input", function() {
-
     this.style.height = "auto";
-
-    this.style.height =
-        Math.min(this.scrollHeight, 180) + "px";
-
+    this.style.height = Math.min(this.scrollHeight, 180) + "px";
 });
 
-
-/* ================================
-   ENTRÉE
-================================ */
-
 zone.addEventListener("keydown", function(event) {
-
-    if (
-        event.key === "Enter" &&
-        !event.shiftKey
-    ) {
-
+    if (event.key === "Enter" && !event.shiftKey) {
         event.preventDefault();
-
         envoyer();
-
     }
-
 });
 
 </script>
 
 </body>
 </html>
-
