@@ -3,13 +3,13 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const PORT = process.env.PORT || 8090;
-
-// Modèle Gemini
-const GEMINI_MODEL = "gemini-2.5-flash-lite";
-
-// La clé reste uniquement côté serveur
+const PORT = Number(process.env.PORT || 8090);
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash-lite";
 const API_KEY = process.env.GEMINI_API_KEY;
+const LOG_DIR = process.env.LOG_DIR || path.join(path.dirname(fileURLToPath(import.meta.url)), "logs");
+const LOG_FILE = process.env.LOG_FILE || path.join(LOG_DIR, "isidore.log");
+const LOG_MAX_SIZE = Number(process.env.LOG_MAX_SIZE || 5 * 1024 * 1024);
+const LOG_MAX_FILES = Number(process.env.LOG_MAX_FILES || 5);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -26,6 +26,65 @@ if (!API_KEY) {
     console.error('export GEMINI_API_KEY="VOTRE_CLE"');
     console.error("");
     process.exit(1);
+}
+
+/* =====================================================
+   LOGS FICHIER + ROTATION
+===================================================== */
+
+function ensureLogDir() {
+    fs.mkdirSync(LOG_DIR, { recursive: true });
+}
+
+function rotateLogFile() {
+    if (!fs.existsSync(LOG_FILE)) return;
+
+    const stat = fs.statSync(LOG_FILE);
+    if (stat.size < LOG_MAX_SIZE) return;
+
+    for (let i = LOG_MAX_FILES - 1; i >= 1; i--) {
+        const source = `${LOG_FILE}.${i}`;
+        const target = `${LOG_FILE}.${i + 1}`;
+
+        if (fs.existsSync(source)) {
+            if (i === LOG_MAX_FILES - 1 && fs.existsSync(target)) {
+                fs.unlinkSync(target);
+            }
+            fs.renameSync(source, target);
+        }
+    }
+
+    if (fs.existsSync(`${LOG_FILE}.1`)) {
+        fs.unlinkSync(`${LOG_FILE}.1`);
+    }
+
+    fs.renameSync(LOG_FILE, `${LOG_FILE}.1`);
+}
+
+function writeLogLine(entry) {
+    ensureLogDir();
+
+    if (fs.existsSync(LOG_FILE) && fs.statSync(LOG_FILE).size >= LOG_MAX_SIZE) {
+        rotateLogFile();
+    }
+
+    const line = `${JSON.stringify(entry)}\n`;
+    fs.appendFileSync(LOG_FILE, line, "utf8");
+}
+
+function logger(level, msg, meta = {}) {
+    const entry = {
+        timestamp: new Date().toISOString(),
+        level,
+        msg
+    };
+
+    if (Object.keys(meta).length > 0) {
+        entry.meta = meta;
+    }
+
+    writeLogLine(entry);
+    console.log(JSON.stringify(entry));
 }
 
 /* =====================================================
@@ -123,7 +182,7 @@ function escapeHTML(text) {
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
+        .replace(/\"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
 
@@ -233,6 +292,12 @@ function readBody(req) {
 ===================================================== */
 
 const server = http.createServer(async (req, res) => {
+    logger("info", "Requête reçue", {
+        method: req.method,
+        url: req.url,
+        ip: req.socket.remoteAddress
+    });
+
     /* ================================================
        API ISIDORE
     ================================================= */
@@ -246,6 +311,7 @@ const server = http.createServer(async (req, res) => {
             try {
                 data = JSON.parse(body);
             } catch {
+                logger("warn", "JSON invalide", { url: req.url });
                 sendJSON(res, 400, { error: "Requête JSON invalide." });
                 return;
             }
@@ -253,21 +319,23 @@ const server = http.createServer(async (req, res) => {
             const problem = String(data?.problem || "").trim();
 
             if (!problem) {
+                logger("warn", "Problème vide", { url: req.url });
                 sendJSON(res, 400, { error: "Le problème est vide." });
                 return;
             }
 
-            console.log("\n📘 Nouveau problème :");
-            console.log(problem);
+            logger("info", "Nouveau problème", { length: problem.length });
 
             const answer = await askGemini(problem);
 
-            console.log("✅ Réponse Gemini reçue.");
+            logger("info", "Réponse Gemini reçue", { length: answer.length });
 
             sendJSON(res, 200, { answer });
         } catch (error) {
-            console.error("\n❌ Erreur Gemini :");
-            console.error(error.message);
+            logger("error", "Erreur Gemini", {
+                message: error.message,
+                stack: error.stack
+            });
 
             sendJSON(res, 500, {
                 error: error.message || "Erreur interne du serveur."
@@ -288,6 +356,10 @@ const server = http.createServer(async (req, res) => {
     const rootPrefix = `${publicRoot}${path.sep}`;
 
     if (resolvedPath !== publicRoot && !resolvedPath.startsWith(rootPrefix)) {
+        logger("warn", "Tentative d’accès interdit", {
+            requestedPath,
+            ip: req.socket.remoteAddress
+        });
         res.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
         res.end("Accès interdit.");
         return;
@@ -295,6 +367,10 @@ const server = http.createServer(async (req, res) => {
 
     fs.readFile(resolvedPath, (error, data) => {
         if (error) {
+            logger("warn", "Fichier introuvable", {
+                requestedPath,
+                ip: req.socket.remoteAddress
+            });
             res.writeHead(404, {
                 "Content-Type": "text/plain; charset=utf-8"
             });
@@ -329,6 +405,14 @@ const server = http.createServer(async (req, res) => {
 ===================================================== */
 
 server.listen(PORT, "0.0.0.0", () => {
+    logger("info", "Démarrage du serveur", {
+        port: PORT,
+        model: GEMINI_MODEL,
+        logFile: LOG_FILE,
+        logMaxSize: LOG_MAX_SIZE,
+        logMaxFiles: LOG_MAX_FILES
+    });
+
     console.log("");
     console.log("======================================");
     console.log("       ISIDORE V5.1 + GEMINI");
@@ -345,6 +429,11 @@ server.listen(PORT, "0.0.0.0", () => {
 ===================================================== */
 
 server.on("error", error => {
+    logger("error", "Erreur serveur", {
+        code: error.code,
+        message: error.message
+    });
+
     if (error.code === "EADDRINUSE") {
         console.error("");
         console.error(`❌ Le port ${PORT} est déjà utilisé.`);
@@ -353,4 +442,14 @@ server.on("error", error => {
     } else {
         console.error("❌ Erreur serveur :", error);
     }
+});
+
+process.on("SIGINT", () => {
+    logger("info", "Arrêt du serveur", { signal: "SIGINT" });
+    server.close(() => process.exit(0));
+});
+
+process.on("SIGTERM", () => {
+    logger("info", "Arrêt du serveur", { signal: "SIGTERM" });
+    server.close(() => process.exit(0));
 });
