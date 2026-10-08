@@ -6,14 +6,13 @@ import { fileURLToPath } from "url";
 const PORT = process.env.PORT || 8090;
 
 // Modèle Gemini
-const GEMINI_MODEL = "gemini-3.5-flash-lite";
+const GEMINI_MODEL = "gemini-2.5-flash-lite";
 
 // La clé reste uniquement côté serveur
 const API_KEY = process.env.GEMINI_API_KEY;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
 
 /* =====================================================
    VÉRIFICATION DE LA CLÉ
@@ -28,7 +27,6 @@ if (!API_KEY) {
     console.error("");
     process.exit(1);
 }
-
 
 /* =====================================================
    INSTRUCTIONS D'ISIDORE
@@ -108,7 +106,6 @@ utile, précis, pédagogique et compréhensible.
 ===================================================== */
 
 function sendJSON(res, status, data) {
-
     res.writeHead(status, {
         "Content-Type": "application/json; charset=utf-8",
         "Cache-Control": "no-store"
@@ -117,13 +114,11 @@ function sendJSON(res, status, data) {
     res.end(JSON.stringify(data));
 }
 
-
 /* =====================================================
    ÉCHAPPEMENT HTML
 ===================================================== */
 
 function escapeHTML(text) {
-
     return String(text)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
@@ -132,18 +127,14 @@ function escapeHTML(text) {
         .replace(/'/g, "&#039;");
 }
 
-
 /* =====================================================
    APPEL GEMINI
 ===================================================== */
 
 async function askGemini(problem) {
-
-    const url =
-        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
     const body = {
-
         system_instruction: {
             parts: [
                 {
@@ -151,405 +142,215 @@ async function askGemini(problem) {
                 }
             ]
         },
-
         contents: [
             {
                 role: "user",
-
                 parts: [
                     {
-                        text:
-                        `Résous le problème suivant :\n\n${problem}`
+                        text: `Résous le problème suivant :\n\n${problem}`
                     }
                 ]
             }
         ],
-
         generationConfig: {
-
             maxOutputTokens: 3000
-
         }
-
     };
 
-
     const response = await fetch(url, {
-
         method: "POST",
-
         headers: {
-
             "Content-Type": "application/json",
-
             "x-goog-api-key": API_KEY
-
         },
-
         body: JSON.stringify(body)
-
     });
 
+    let data;
 
-    const data = await response.json();
-
+    try {
+        data = await response.json();
+    } catch {
+        throw new Error("Réponse invalide reçue de Gemini.");
+    }
 
     if (!response.ok) {
-
-        const message =
-            data?.error?.message ||
-            "Erreur inconnue de Gemini.";
-
+        const message = data?.error?.message || "Erreur inconnue de Gemini.";
         throw new Error(message);
     }
 
-
-    const text =
-        data?.candidates?.[0]?.content?.parts
-            ?.map(part => part.text || "")
-            .join("")
-            .trim();
-
+    const text = data?.candidates?.[0]?.content?.parts
+        ?.map(part => part.text || "")
+        .join("")
+        .trim();
 
     if (!text) {
-
-        throw new Error(
-            "Gemini n'a retourné aucune réponse."
-        );
+        throw new Error("Gemini n'a retourné aucune réponse.");
     }
-
 
     return text;
 }
-
 
 /* =====================================================
    LECTURE DU CORPS DE LA REQUÊTE
 ===================================================== */
 
 function readBody(req) {
-
     return new Promise((resolve, reject) => {
-
         let body = "";
 
-        req.on("data", chunk => {
+        const onData = chunk => {
+            body += typeof chunk === "string" ? chunk : chunk.toString("utf8");
 
-            body += chunk;
-
-            // Protection contre les requêtes énormes
             if (body.length > 100000) {
-
-                reject(
-                    new Error(
-                        "Requête trop volumineuse."
-                    )
-                );
-
                 req.destroy();
+                reject(new Error("Requête trop volumineuse."));
             }
+        };
 
-        });
-
-
-        req.on("end", () => {
-
+        const onEnd = () => {
+            req.off("data", onData);
+            req.off("end", onEnd);
+            req.off("error", onError);
             resolve(body);
+        };
 
-        });
+        const onError = error => {
+            req.off("data", onData);
+            req.off("end", onEnd);
+            req.off("error", onError);
+            reject(error);
+        };
 
-
-        req.on("error", reject);
-
+        req.on("data", onData);
+        req.on("end", onEnd);
+        req.on("error", onError);
     });
 }
-
 
 /* =====================================================
    SERVEUR
 ===================================================== */
 
-const server = http.createServer(
-async (req, res) => {
-
-
+const server = http.createServer(async (req, res) => {
     /* ================================================
        API ISIDORE
     ================================================= */
 
-    if (
-        req.method === "POST" &&
-        req.url === "/api/solve"
-    ) {
-
+    if (req.method === "POST" && req.url === "/api/solve") {
         try {
-
-            const body =
-                await readBody(req);
-
+            const body = await readBody(req);
 
             let data;
 
             try {
-
-                data =
-                    JSON.parse(body);
-
+                data = JSON.parse(body);
             } catch {
-
-                sendJSON(
-                    res,
-                    400,
-                    {
-                        error:
-                        "Requête JSON invalide."
-                    }
-                );
-
+                sendJSON(res, 400, { error: "Requête JSON invalide." });
                 return;
             }
 
-
-            const problem =
-                String(
-                    data?.problem || ""
-                ).trim();
-
+            const problem = String(data?.problem || "").trim();
 
             if (!problem) {
-
-                sendJSON(
-                    res,
-                    400,
-                    {
-                        error:
-                        "Le problème est vide."
-                    }
-                );
-
+                sendJSON(res, 400, { error: "Le problème est vide." });
                 return;
             }
 
-
-            console.log(
-                "\n📘 Nouveau problème :"
-            );
-
+            console.log("\n📘 Nouveau problème :");
             console.log(problem);
 
+            const answer = await askGemini(problem);
 
-            const answer =
-                await askGemini(problem);
+            console.log("✅ Réponse Gemini reçue.");
 
-
-            console.log(
-                "✅ Réponse Gemini reçue."
-            );
-
-
-            sendJSON(
-                res,
-                200,
-                {
-                    answer: answer
-                }
-            );
-
-
+            sendJSON(res, 200, { answer });
         } catch (error) {
+            console.error("\n❌ Erreur Gemini :");
+            console.error(error.message);
 
-            console.error(
-                "\n❌ Erreur Gemini :"
-            );
-
-            console.error(
-                error.message
-            );
-
-
-            sendJSON(
-                res,
-                500,
-                {
-                    error:
-                    error.message
-                }
-            );
+            sendJSON(res, 500, {
+                error: error.message || "Erreur interne du serveur."
+            });
         }
-
 
         return;
     }
-
 
     /* ================================================
        PAGE PRINCIPALE
     ================================================= */
 
-    let requestedPath =
-        req.url === "/"
-        ? "/index.html"
-        : req.url;
+    const url = new URL(req.url || "/", "http://localhost");
+    const requestedPath = url.pathname === "/" ? "/index.html" : url.pathname;
+    const publicRoot = path.resolve(__dirname);
+    const resolvedPath = path.resolve(publicRoot, "." + requestedPath);
+    const rootPrefix = `${publicRoot}${path.sep}`;
 
+    if (resolvedPath !== publicRoot && !resolvedPath.startsWith(rootPrefix)) {
+        res.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
+        res.end("Accès interdit.");
+        return;
+    }
 
-    // Empêcher ../
-    requestedPath =
-        decodeURIComponent(requestedPath)
-        .replace(/\.\./g, "");
+    fs.readFile(resolvedPath, (error, data) => {
+        if (error) {
+            res.writeHead(404, {
+                "Content-Type": "text/plain; charset=utf-8"
+            });
 
-
-    const filePath =
-    path.join(
-        __dirname,
-        "." + requestedPath
-    );
-
-    fs.readFile(
-        filePath,
-        (error, data) => {
-
-
-            if (error) {
-
-                res.writeHead(
-                    404,
-                    {
-                        "Content-Type":
-                        "text/plain; charset=utf-8"
-                    }
-                );
-
-                res.end(
-                    "Fichier introuvable."
-                );
-
-                return;
-            }
-
-
-            const ext =
-                path.extname(filePath);
-
-
-            const mimeTypes = {
-
-                ".html":
-                    "text/html; charset=utf-8",
-
-                ".js":
-                    "text/javascript; charset=utf-8",
-
-                ".css":
-                    "text/css; charset=utf-8",
-
-                ".json":
-                    "application/json; charset=utf-8",
-
-                ".png":
-                    "image/png",
-
-                ".jpg":
-                    "image/jpeg",
-
-                ".jpeg":
-                    "image/jpeg",
-
-                ".svg":
-                    "image/svg+xml"
-
-            };
-
-
-            res.writeHead(
-                200,
-                {
-                    "Content-Type":
-                        mimeTypes[ext] ||
-                        "application/octet-stream"
-                }
-            );
-
-
-            res.end(data);
-
+            res.end("Fichier introuvable.");
+            return;
         }
-    );
 
+        const ext = path.extname(resolvedPath);
+
+        const mimeTypes = {
+            ".html": "text/html; charset=utf-8",
+            ".js": "text/javascript; charset=utf-8",
+            ".css": "text/css; charset=utf-8",
+            ".json": "application/json; charset=utf-8",
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".svg": "image/svg+xml"
+        };
+
+        res.writeHead(200, {
+            "Content-Type": mimeTypes[ext] || "application/octet-stream"
+        });
+
+        res.end(data);
+    });
 });
-
 
 /* =====================================================
    DÉMARRAGE
 ===================================================== */
 
-server.listen(
-    PORT,
-    "0.0.0.0",
-    () => {
-
-        console.log("");
-        console.log(
-            "======================================"
-        );
-
-        console.log(
-            "       ISIDORE V5.1 + GEMINI"
-        );
-
-        console.log(
-            "======================================"
-        );
-
-        console.log(
-            `🌐 http://127.0.0.1:${PORT}`
-        );
-
-        console.log(
-            `🧠 Modèle : ${GEMINI_MODEL}`
-        );
-
-        console.log(
-            "🤖 Moteur IA : Gemini"
-        );
-
-        console.log(
-            "======================================"
-        );
-
-        console.log("");
-
-    }
-);
-
+server.listen(PORT, "0.0.0.0", () => {
+    console.log("");
+    console.log("======================================");
+    console.log("       ISIDORE V5.1 + GEMINI");
+    console.log("======================================");
+    console.log(`🌐 http://127.0.0.1:${PORT}`);
+    console.log(`🧠 Modèle : ${GEMINI_MODEL}`);
+    console.log("🤖 Moteur IA : Gemini");
+    console.log("======================================");
+    console.log("");
+});
 
 /* =====================================================
    ERREUR SERVEUR
 ===================================================== */
 
-server.on(
-    "error",
-    error => {
-
-        if (error.code === "EADDRINUSE") {
-
-            console.error("");
-            console.error(
-                `❌ Le port ${PORT} est déjà utilisé.`
-            );
-
-            console.error(
-                "Arrêtez l'ancien serveur avec CTRL+C."
-            );
-
-            console.error("");
-
-        } else {
-
-            console.error(
-                "❌ Erreur serveur :",
-                error
-            );
-        }
-
+server.on("error", error => {
+    if (error.code === "EADDRINUSE") {
+        console.error("");
+        console.error(`❌ Le port ${PORT} est déjà utilisé.`);
+        console.error("Arrêtez l'ancien serveur avec CTRL+C.");
+        console.error("");
+    } else {
+        console.error("❌ Erreur serveur :", error);
     }
-);
+});
