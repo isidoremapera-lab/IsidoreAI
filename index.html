@@ -1,569 +1,844 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+import http from "http";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
-<title>IsidoreAI</title>
+/* =====================================================
+   CONFIGURATION
+===================================================== */
 
-<!-- Noto Serif -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;500;600;700&display=swap" rel="stylesheet">
+const PORT = process.env.PORT || 10000;
 
-<!-- MathJax -->
-<script>
-window.MathJax = {
-    tex: {
-        inlineMath: [['\\(', '\\)']],
-        displayMath: [['\\[', '\\]']]
-    },
-    svg: {
-        fontCache: 'global'
-    }
-};
-</script>
+// IMPORTANT : modèle Gemini utilisé par IsidoreAI
+const GEMINI_MODEL = "gemini-3.5-flash-lite";
 
-<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+// Clé Gemini uniquement côté serveur
+const API_KEY = process.env.GEMINI_API_KEY;
 
-<style>
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-* {
-    box-sizing: border-box;
+
+/* =====================================================
+   IDENTIFICATION DU SERVEUR
+===================================================== */
+
+const SERVER_VERSION = "ISIDOREAI-3.5-FIX-001";
+
+console.log("");
+console.log("==============================================");
+console.log("        ISIDOREAI - SERVEUR");
+console.log("==============================================");
+console.log("🔥 VERSION :", SERVER_VERSION);
+console.log("🧠 MODÈLE  :", GEMINI_MODEL);
+console.log("📂 DOSSIER :", __dirname);
+console.log("==============================================");
+console.log("");
+
+
+/* =====================================================
+   VÉRIFICATION DE LA CLÉ GEMINI
+===================================================== */
+
+if (!API_KEY) {
+
+    console.error("");
+    console.error("❌ ERREUR : GEMINI_API_KEY est absente.");
+    console.error("Configurez GEMINI_API_KEY dans Render.");
+    console.error("");
+
+    process.exit(1);
 }
 
-html {
-    scroll-behavior: smooth;
-}
-
-body {
-    margin: 0;
-    background: #ffffff;
-    color: #202123;
-    font-family: "Noto Serif", Georgia, serif;
-}
-
-/* HEADER */
-
-header {
-    height: 60px;
-    display: flex;
-    align-items: center;
-    padding: 0 20px;
-    border-bottom: 1px solid #e5e5e5;
-    background: #ffffff;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-}
-
-.logo {
-    font-size: 21px;
-    font-weight: 700;
-}
-
-.logo span {
-    font-weight: 400;
-}
-
-/* PAGE */
-
-main {
-    max-width: 900px;
-    margin: auto;
-    padding: 45px 20px 120px;
-}
-
-/* WELCOME */
-
-.welcome {
-    text-align: center;
-    margin-bottom: 45px;
-}
-
-.welcome h1 {
-    margin: 0 0 12px;
-    font-size: 34px;
-    font-weight: 700;
-}
-
-.welcome p {
-    margin: 0;
-    color: #777;
-    font-size: 17px;
-}
-
-/* CONVERSATION */
-
-#conversation {
-    width: 100%;
-}
-
-/* USER MESSAGE */
-
-.user-block {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    margin-bottom: 35px;
-}
-
-.user-name {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 8px;
-    color: #555;
-}
-
-.user-message {
-    max-width: 80%;
-    background: #f1f1f1;
-    padding: 13px 17px;
-    border-radius: 18px;
-    font-size: 16px;
-    line-height: 1.6;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-}
-
-/* AI ANSWER */
-
-.ai-block {
-    width: 100%;
-    margin-bottom: 45px;
-}
-
-.ai-name {
-    font-size: 16px;
-    font-weight: 700;
-    margin-bottom: 14px;
-}
-
-.ai-answer {
-    width: 100%;
-    font-size: 17px;
-    line-height: 1.85;
-    color: #202123;
-    overflow-wrap: anywhere;
-}
-
-/* TEXT FORMATTING */
-
-.ai-answer h1,
-.ai-answer h2,
-.ai-answer h3 {
-    font-weight: 700;
-    line-height: 1.35;
-    margin-top: 25px;
-    margin-bottom: 12px;
-}
-
-.ai-answer h1 {
-    font-size: 28px;
-}
-
-.ai-answer h2 {
-    font-size: 23px;
-}
-
-.ai-answer h3 {
-    font-size: 20px;
-}
-
-.ai-answer p {
-    margin: 0 0 16px;
-}
-
-.ai-answer ul,
-.ai-answer ol {
-    padding-left: 28px;
-    margin-top: 10px;
-    margin-bottom: 18px;
-}
-
-.ai-answer li {
-    margin-bottom: 8px;
-}
-
-.ai-answer strong {
-    font-weight: 700;
-}
-
-.ai-answer code {
-    background: #f3f3f3;
-    padding: 2px 6px;
-    border-radius: 5px;
-    font-family: monospace;
-}
-
-/* FORMULA */
-
-.ai-answer mjx-container[display="true"] {
-    margin: 25px 0 !important;
-    overflow-x: auto;
-    overflow-y: hidden;
-}
-
-/* INPUT */
-
-.input-area {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(255,255,255,.96);
-    border-top: 1px solid #e5e5e5;
-    padding: 12px 15px;
-    backdrop-filter: blur(8px);
-}
-
-.input-inner {
-    max-width: 900px;
-    margin: auto;
-    display: flex;
-    align-items: flex-end;
-    gap: 10px;
-    border: 1px solid #ccc;
-    border-radius: 17px;
-    padding: 8px;
-    background: #fff;
-}
-
-textarea {
-    flex: 1;
-    border: 0;
-    outline: none;
-    resize: none;
-    min-height: 45px;
-    max-height: 180px;
-    padding: 10px;
-    font-family: "Noto Serif", Georgia, serif;
-    font-size: 16px;
-    line-height: 1.5;
-    color: #202123;
-}
-
-textarea::placeholder {
-    color: #999;
-}
-
-button {
-    width: 45px;
-    height: 45px;
-    border: 0;
-    border-radius: 12px;
-    background: #202123;
-    color: white;
-    font-size: 20px;
-    cursor: pointer;
-}
-
-button:disabled {
-    opacity: .5;
-    cursor: not-allowed;
-}
-
-/* LOADING */
-
-.loading {
-    display: inline-flex;
-    gap: 5px;
-    margin-top: 5px;
-}
-
-.loading span {
-    width: 7px;
-    height: 7px;
-    background: #777;
-    border-radius: 50%;
-    animation: bounce 1.2s infinite;
-}
-
-.loading span:nth-child(2) {
-    animation-delay: .15s;
-}
-
-.loading span:nth-child(3) {
-    animation-delay: .3s;
-}
-
-@keyframes bounce {
-    0%, 60%, 100% {
-        transform: translateY(0);
-    }
-
-    30% {
-        transform: translateY(-6px);
-    }
-}
-
-/* MOBILE */
-
-@media (max-width: 600px) {
-
-    header {
-        padding: 0 15px;
-    }
-
-    main {
-        padding: 32px 16px 120px;
-    }
-
-    .welcome h1 {
-        font-size: 27px;
-    }
-
-    .welcome p {
-        font-size: 15px;
-    }
-
-    .user-message {
-        max-width: 88%;
-        font-size: 15px;
-    }
-
-    .ai-answer {
-        font-size: 16px;
-        line-height: 1.8;
-    }
-
-    .ai-answer h1 {
-        font-size: 25px;
-    }
-
-    .ai-answer h2 {
-        font-size: 21px;
-    }
-
-    .ai-answer h3 {
-        font-size: 19px;
-    }
-}
-
-</style>
-</head>
-
-<body>
-
-<header>
-
-<div class="logo">
-🤖 Isidore<span>AI</span>
-</div>
-
-</header>
-
-<main>
-
-<section class="welcome">
-    <h1>Bonjour, je suis IsidoreAI</h1>
-    <p>Que voulez-vous savoir aujourd'hui ?</p>
-</section>
-
-<section id="conversation"></section>
-
-</main>
-
-<div class="input-area">
-    <div class="input-inner">
-        <textarea id="question" placeholder="Écrivez votre question..." rows="1"></textarea>
-        <button id="sendButton" type="button" onclick="envoyer()">➤</button>
-    </div>
-</div>
-
-<script>
-
-const zone = document.getElementById("question");
-const conversation = document.getElementById("conversation");
-const sendButton = document.getElementById("sendButton");
-
-function ajouterQuestion(question) {
-    const bloc = document.createElement("div");
-    bloc.className = "user-block";
-    bloc.innerHTML = `
-        <div class="user-name">Vous</div>
-        <div class="user-message"></div>
-    `;
-    bloc.querySelector(".user-message").textContent = question;
-    conversation.appendChild(bloc);
-    return bloc;
-}
-
-function ajouterReponse() {
-    const bloc = document.createElement("div");
-    bloc.className = "ai-block";
-    bloc.innerHTML = `
-        <div class="ai-name">IsidoreAI</div>
-        <div class="ai-answer"></div>
-    `;
-    conversation.appendChild(bloc);
-    return bloc.querySelector(".ai-answer");
-}
-
-function formatAI(text) {
-    let safe = String(text ?? "");
-
-    const formulas = [];
-
-    function proteger(formula) {
-        const id = `___FORMULA_${formulas.length}___`;
-        formulas.push(formula);
-        return id;
-    }
-
-    safe = safe.replace(/\$\$([\s\S]*?)\$\$/g, function(match, formula) {
-        return proteger("\\[" + formula.trim() + "\\]");
-    });
-
-    safe = safe.replace(/\\\[([\s\S]*?)\\\]/g, function(match, formula) {
-        return proteger("\\[" + formula.trim() + "\\]");
-    });
-
-    safe = safe.replace(/(?<!\$)\$([^$\n]+?)\$(?!\$)/g, function(match, formula) {
-        return proteger("\\(" + formula.trim() + "\\)");
-    });
-
-    safe = safe.replace(/\\\(([\s\S]*?)\\\)/g, function(match, formula) {
-        return proteger("\\(" + formula.trim() + "\\)");
-    });
-
-    safe = safe
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-
-    safe = safe.replace(/^### (.*)$/gm, "<h3>$1</h3>");
-    safe = safe.replace(/^## (.*)$/gm, "<h2>$1</h2>");
-    safe = safe.replace(/^# (.*)$/gm, "<h1>$1</h1>");
-
-    safe = safe.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
-
-    safe = safe.replace(/^\s*[-•*] (.*)$/gm, "<li>$1</li>");
-    safe = safe.replace(/(<li>.*?<\/li>(?:<br>)?)+/gs, function(match) {
-        return "<ul>" + match + "</ul>";
-    });
-
-    safe = safe.replace(/\n\n+/g, "<br><br>");
-    safe = safe.replace(/\n/g, "<br>");
-
-    formulas.forEach(function(formula, index) {
-        const id = `___FORMULA_${index}___`;
-        safe = safe.replace(id, formula);
-    });
-
-    return safe;
-}
-
-function extraireTexteReponse(payload) {
-    if (typeof payload === "string") {
-        return payload;
-    }
-
-    if (payload && typeof payload === "object") {
-        const candidates = [
-            payload.answer,
-            payload.response,
-            payload.result,
-            payload.output,
-            payload.message,
-            payload.text
-        ];
-
-        for (const candidate of candidates) {
-            if (typeof candidate === "string" && candidate.trim()) {
-                return candidate;
-            }
-        }
-    }
-
-    return "Aucune réponse reçue.";
-}
-
-async function envoyer() {
-    const question = zone.value.trim();
-
-    if (!question || sendButton.disabled) {
+
+/* =====================================================
+   INSTRUCTIONS D'ISIDORE
+===================================================== */
+
+const SYSTEM_INSTRUCTION = `
+Tu es ISIDOREAI, un assistant intelligent généraliste.
+
+Tu réponds principalement en français, sauf si
+l'utilisateur demande explicitement une autre langue.
+
+Tu peux répondre dans de nombreux domaines :
+
+- mathématiques ;
+- physique ;
+- chimie ;
+- biologie ;
+- médecine générale avec prudence ;
+- histoire ;
+- géographie ;
+- éducation ;
+- informatique ;
+- programmation ;
+- mécanique ;
+- automobile ;
+- électricité ;
+- économie et gestion ;
+- droit avec prudence ;
+- littérature ;
+- langues et traduction ;
+- culture générale ;
+- technologie ;
+- vie quotidienne.
+
+Tu dois comprendre l'utilisateur même lorsqu'il :
+
+- fait des fautes d'orthographe ;
+- oublie des accents ;
+- écrit rapidement ;
+- utilise des abréviations ;
+- écrit phonétiquement ;
+- mélange plusieurs langues ;
+- formule mal sa question.
+
+Réponds de manière claire, structurée et pédagogique.
+
+Pour les problèmes de mathématiques et de sciences :
+
+1. Identifie les données.
+2. Identifie ce qui est recherché.
+3. Donne la formule utile.
+4. Effectue le calcul étape par étape.
+5. Donne le résultat final avec son unité lorsque c'est nécessaire.
+
+Pour les questions générales, réponds directement.
+
+Si tu ne connais pas une information ou si elle est
+incertaine, indique clairement cette incertitude.
+
+N'invente jamais une information présentée comme un fait.
+
+Pour les sujets sensibles ou à risque, donne des
+informations prudentes et recommande une source
+professionnelle lorsque cela est nécessaire.
+
+Ton objectif est d'être un assistant généraliste,
+utile, précis, pédagogique et compréhensible.
+`;
+
+
+/* =====================================================
+   RÉPONSE JSON
+===================================================== */
+
+function sendJSON(res, status, data) {
+
+    if (res.headersSent) {
         return;
     }
 
-    ajouterQuestion(question);
+    res.writeHead(status, {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "no-store"
+    });
 
-    zone.value = "";
-    zone.style.height = "auto";
+    res.end(JSON.stringify(data));
+}
 
-    sendButton.disabled = true;
-    zone.disabled = true;
 
-    const answerElement = ajouterReponse();
-    answerElement.innerHTML = `
-        <div class="loading">
-            <span></span>
-            <span></span>
-            <span></span>
-        </div>
-    `;
+/* =====================================================
+   LECTURE DU CORPS DE LA REQUÊTE
+===================================================== */
 
-    faireDefiler();
+function readBody(req) {
+
+    return new Promise((resolve, reject) => {
+
+        let body = "";
+
+        req.on("data", chunk => {
+
+            body += chunk;
+
+            if (body.length > 100000) {
+
+                reject(
+                    new Error("Requête trop volumineuse.")
+                );
+
+                req.destroy();
+            }
+        });
+
+        req.on("end", () => {
+            resolve(body);
+        });
+
+        req.on("error", reject);
+    });
+}
+
+
+/* =====================================================
+   APPEL GEMINI
+===================================================== */
+
+async function askGemini(problem) {
+
+    /*
+       IMPORTANT
+
+       Le modèle est construit UNIQUEMENT à partir
+       de GEMINI_MODEL défini plus haut.
+
+       Il ne doit donc jamais utiliser :
+       gemini-2.5-flash-lite
+    */
+
+    const url =
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
+
+    console.log("");
+    console.log("==============================================");
+    console.log("🧠 APPEL GEMINI");
+    console.log("==============================================");
+    console.log("🔥 VERSION SERVEUR :", SERVER_VERSION);
+    console.log("🧠 MODÈLE DEMANDÉ  :", GEMINI_MODEL);
+    console.log("🌐 URL GEMINI      :", url);
+    console.log("==============================================");
+    console.log("");
+
+
+    const body = {
+
+        system_instruction: {
+
+            parts: [
+                {
+                    text: SYSTEM_INSTRUCTION
+                }
+            ]
+
+        },
+
+        contents: [
+
+            {
+                role: "user",
+
+                parts: [
+
+                    {
+                        text:
+                            `Résous le problème suivant :\n\n${problem}`
+                    }
+
+                ]
+
+            }
+
+        ],
+
+        generationConfig: {
+
+            maxOutputTokens: 3000
+
+        }
+
+    };
+
+
+    let response;
 
     try {
-        const response = await fetch("/api/solve", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ problem: question })
-        });
 
-        let data;
+        response = await fetch(
+            url,
+            {
 
-        try {
-            data = await response.json();
-        } catch (jsonError) {
-            throw new Error("Le serveur a répondu avec une réponse invalide.");
-        }
+                method: "POST",
 
-        if (!response.ok) {
-            throw new Error(data?.error || "Erreur du serveur");
-        }
+                headers: {
 
-        const answerText = extraireTexteReponse(data);
-        answerElement.innerHTML = formatAI(answerText);
+                    "Content-Type":
+                        "application/json",
 
-        if (window.MathJax && typeof window.MathJax.typesetPromise === "function") {
-            window.MathJax.typesetPromise([answerElement]);
-        }
-    } catch (error) {
-        answerElement.innerHTML = "<strong>❌ Erreur :</strong> " + (error?.message || "Une erreur inconnue s'est produite.");
-    } finally {
-        sendButton.disabled = false;
-        zone.disabled = false;
-        zone.focus();
-        faireDefiler();
+                    "x-goog-api-key":
+                        API_KEY
+
+                },
+
+                body:
+                    JSON.stringify(body)
+
+            }
+        );
+
+    } catch (networkError) {
+
+        throw new Error(
+            `Impossible de contacter Gemini : ${networkError.message}`
+        );
     }
+
+
+    const data =
+        await response.json();
+
+
+    if (!response.ok) {
+
+        const message =
+            data?.error?.message ||
+            "Erreur inconnue de Gemini.";
+
+        console.error("");
+        console.error("❌ GEMINI A REFUSÉ LA REQUÊTE");
+        console.error("🧠 Modèle utilisé :", GEMINI_MODEL);
+        console.error("❌ Message :", message);
+        console.error("");
+
+        throw new Error(message);
+    }
+
+
+    const text =
+        data?.candidates?.[0]?.content?.parts
+            ?.map(part => part.text || "")
+            .join("")
+            .trim();
+
+
+    if (!text) {
+
+        throw new Error(
+            "Gemini n'a retourné aucune réponse."
+        );
+    }
+
+
+    console.log("✅ Réponse Gemini reçue.");
+    console.log("");
+
+    return text;
 }
 
-function faireDefiler() {
-    setTimeout(() => {
-        window.scrollTo({
-            top: document.body.scrollHeight,
-            behavior: "smooth"
-        });
-    }, 100);
-}
 
-zone.addEventListener("input", function() {
-    this.style.height = "auto";
-    this.style.height = Math.min(this.scrollHeight, 180) + "px";
-});
+/* =====================================================
+   TYPES MIME
+===================================================== */
 
-zone.addEventListener("keydown", function(event) {
-    if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
-        envoyer();
+const mimeTypes = {
+
+    ".html":
+        "text/html; charset=utf-8",
+
+    ".js":
+        "text/javascript; charset=utf-8",
+
+    ".mjs":
+        "text/javascript; charset=utf-8",
+
+    ".css":
+        "text/css; charset=utf-8",
+
+    ".json":
+        "application/json; charset=utf-8",
+
+    ".png":
+        "image/png",
+
+    ".jpg":
+        "image/jpeg",
+
+    ".jpeg":
+        "image/jpeg",
+
+    ".webp":
+        "image/webp",
+
+    ".gif":
+        "image/gif",
+
+    ".svg":
+        "image/svg+xml",
+
+    ".ico":
+        "image/x-icon",
+
+    ".txt":
+        "text/plain; charset=utf-8"
+
+};
+
+
+/* =====================================================
+   SERVEUR HTTP
+===================================================== */
+
+const server =
+    http.createServer(
+        async (req, res) => {
+
+            try {
+
+                const requestUrl =
+                    new URL(
+                        req.url,
+                        `http://${req.headers.host || "localhost"}`
+                    );
+
+
+                const pathname =
+                    decodeURIComponent(
+                        requestUrl.pathname
+                    );
+
+
+                /* ========================================
+                   HEALTH CHECK
+                ======================================== */
+
+                if (
+                    req.method === "GET" &&
+                    pathname === "/health"
+                ) {
+
+                    sendJSON(
+                        res,
+                        200,
+                        {
+
+                            status: "ok",
+
+                            service:
+                                "IsidoreAI",
+
+                            version:
+                                SERVER_VERSION,
+
+                            model:
+                                GEMINI_MODEL,
+
+                            directory:
+                                __dirname
+
+                        }
+                    );
+
+                    return;
+                }
+
+
+                /* ========================================
+                   DIAGNOSTIC
+                ======================================== */
+
+                if (
+                    req.method === "GET" &&
+                    pathname === "/diagnostic"
+                ) {
+
+                    sendJSON(
+                        res,
+                        200,
+                        {
+
+                            status: "ok",
+
+                            server:
+                                SERVER_VERSION,
+
+                            model:
+                                GEMINI_MODEL,
+
+                            node:
+                                process.version,
+
+                            directory:
+                                __dirname,
+
+                            indexExists:
+                                fs.existsSync(
+                                    path.join(
+                                        __dirname,
+                                        "index.html"
+                                    )
+                                )
+
+                        }
+                    );
+
+                    return;
+                }
+
+
+                /* ========================================
+                   API ISIDORE
+                ======================================== */
+
+                if (
+                    req.method === "POST" &&
+                    pathname === "/api/solve"
+                ) {
+
+                    try {
+
+                        const body =
+                            await readBody(req);
+
+
+                        let data;
+
+                        try {
+
+                            data =
+                                JSON.parse(body);
+
+                        } catch {
+
+                            sendJSON(
+                                res,
+                                400,
+                                {
+                                    error:
+                                        "Requête JSON invalide."
+                                }
+                            );
+
+                            return;
+                        }
+
+
+                        const problem =
+                            String(
+                                data?.problem || ""
+                            ).trim();
+
+
+                        if (!problem) {
+
+                            sendJSON(
+                                res,
+                                400,
+                                {
+                                    error:
+                                        "Le problème est vide."
+                                }
+                            );
+
+                            return;
+                        }
+
+
+                        console.log("");
+                        console.log(
+                            "📘 NOUVEAU PROBLÈME"
+                        );
+
+                        console.log(problem);
+
+                        console.log(
+                            "🧠 Modèle :",
+                            GEMINI_MODEL
+                        );
+
+
+                        const answer =
+                            await askGemini(
+                                problem
+                            );
+
+
+                        sendJSON(
+                            res,
+                            200,
+                            {
+                                answer:
+                                    answer
+                            }
+                        );
+
+
+                    } catch (error) {
+
+                        console.error("");
+                        console.error(
+                            "❌ ERREUR GEMINI"
+                        );
+
+                        console.error(
+                            error.message
+                        );
+
+                        console.error("");
+
+
+                        sendJSON(
+                            res,
+                            500,
+                            {
+                                error:
+                                    error.message,
+
+                                model:
+                                    GEMINI_MODEL,
+
+                                server:
+                                    SERVER_VERSION
+                            }
+                        );
+                    }
+
+
+                    return;
+                }
+
+
+                /* ========================================
+                   FICHIERS STATIQUES
+                ======================================== */
+
+                let requestedPath =
+                    pathname;
+
+
+                if (
+                    requestedPath === "/" ||
+                    requestedPath === ""
+                ) {
+
+                    requestedPath =
+                        "/index.html";
+                }
+
+
+                /*
+                   Supprimer le slash initial
+                */
+
+                requestedPath =
+                    requestedPath
+                        .replace(/^\/+/, "");
+
+
+                /*
+                   Protection contre ../
+                */
+
+                if (
+                    requestedPath.includes("..")
+                ) {
+
+                    res.writeHead(
+                        403,
+                        {
+                            "Content-Type":
+                                "text/plain; charset=utf-8"
+                        }
+                    );
+
+                    res.end(
+                        "Accès interdit."
+                    );
+
+                    return;
+                }
+
+
+                const filePath =
+                    path.resolve(
+                        __dirname,
+                        requestedPath
+                    );
+
+
+                const rootPath =
+                    path.resolve(
+                        __dirname
+                    );
+
+
+                /*
+                   Vérification de sécurité
+                */
+
+                if (
+                    filePath !== rootPath &&
+                    !filePath.startsWith(
+                        rootPath + path.sep
+                    )
+                ) {
+
+                    res.writeHead(
+                        403,
+                        {
+                            "Content-Type":
+                                "text/plain; charset=utf-8"
+                        }
+                    );
+
+                    res.end(
+                        "Accès interdit."
+                    );
+
+                    return;
+                }
+
+
+                console.log("");
+                console.log(
+                    "📂 FICHIER DEMANDÉ :",
+                    requestedPath
+                );
+
+                console.log(
+                    "📄 CHEMIN :",
+                    filePath
+                );
+
+
+                fs.readFile(
+                    filePath,
+                    (error, data) => {
+
+                        if (error) {
+
+                            console.error(
+                                "❌ Fichier introuvable :",
+                                filePath
+                            );
+
+                            res.writeHead(
+                                404,
+                                {
+                                    "Content-Type":
+                                        "text/plain; charset=utf-8"
+                                }
+                            );
+
+                            res.end(
+                                "Fichier introuvable."
+                            );
+
+                            return;
+                        }
+
+
+                        const ext =
+                            path.extname(
+                                filePath
+                            ).toLowerCase();
+
+
+                        res.writeHead(
+                            200,
+                            {
+
+                                "Content-Type":
+                                    mimeTypes[ext] ||
+                                    "application/octet-stream",
+
+                                "Cache-Control":
+                                    "no-cache"
+
+                            }
+                        );
+
+
+                        res.end(data);
+
+                    }
+                );
+
+
+            } catch (error) {
+
+                console.error(
+                    "❌ ERREUR SERVEUR :",
+                    error
+                );
+
+
+                if (!res.headersSent) {
+
+                    sendJSON(
+                        res,
+                        500,
+                        {
+                            error:
+                                "Erreur interne du serveur."
+                        }
+                    );
+                }
+            }
+
+        }
+    );
+
+
+/* =====================================================
+   DÉMARRAGE
+===================================================== */
+
+server.listen(
+    PORT,
+    "0.0.0.0",
+    () => {
+
+        console.log("");
+        console.log(
+            "=============================================="
+        );
+
+        console.log(
+            "       ISIDOREAI EST EN LIGNE"
+        );
+
+        console.log(
+            "=============================================="
+        );
+
+        console.log(
+            "🔥 VERSION :",
+            SERVER_VERSION
+        );
+
+        console.log(
+            "🌐 PORT :",
+            PORT
+        );
+
+        console.log(
+            "📂 DOSSIER :",
+            __dirname
+        );
+
+        console.log(
+            "🧠 MODÈLE :",
+            GEMINI_MODEL
+        );
+
+        console.log(
+            "🤖 MOTEUR : Gemini"
+        );
+
+        console.log(
+            "=============================================="
+        );
+
+        console.log("");
+
     }
-});
+);
 
-</script>
 
-</body>
-</html>
+/* =====================================================
+   ERREUR SERVEUR
+===================================================== */
+
+server.on(
+    "error",
+    error => {
+
+        console.error(
+            "❌ ERREUR SERVEUR :",
+            error
+        );
+
+    }
+);
