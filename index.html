@@ -482,7 +482,7 @@ function extraireTexteReponse(payload) {
 async function envoyer() {
     const question = zone.value.trim();
 
-    if (!question) {
+    if (!question || sendButton.disabled) {
         return;
     }
 
@@ -529,8 +529,8 @@ async function envoyer() {
         const answerText = extraireTexteReponse(data);
         answerElement.innerHTML = formatAI(answerText);
 
-        if (window.MathJax) {
-            MathJax.typesetPromise([answerElement]);
+        if (window.MathJax && typeof window.MathJax.typesetPromise === "function") {
+            window.MathJax.typesetPromise([answerElement]);
         }
     } catch (error) {
         answerElement.innerHTML = "<strong>❌ Erreur :</strong> " + (error?.message || "Une erreur inconnue s'est produite.");
