@@ -1,0 +1,13 @@
+{
+  "background_color": "#ffffff",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "isidoreAI",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "isidoreAI",
+  "start_url": "/",
+  "theme_color": "#2563eb",
+  "id": "/",
+  "description": "IsidoreAI is an intelligent AI assistant for learning, mathematics, science and technical education."
+}
