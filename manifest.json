@@ -9,5 +9,13 @@
   "start_url": "/",
   "theme_color": "#2563eb",
   "id": "/",
-  "description": "IsidoreAI is an intelligent AI assistant for learning, mathematics, science and technical education."
+  "description": "IsidoreAI is an intelligent AI assistant for learning, mathematics, science and technical education.",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
 }
