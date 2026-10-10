@@ -1,0 +1,98 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="IsidoreAI app icon">
+  <defs>
+    <linearGradient id="bg" x1="48" y1="26" x2="456" y2="486" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B84F5"/>
+      <stop offset="1" stop-color="#0B3CC8"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="120" y1="80" x2="390" y2="410" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F6FCFF"/>
+      <stop offset="1" stop-color="#D7E6FF"/>
+    </linearGradient>
+    <linearGradient id="plastic" x1="161" y1="126" x2="356" y2="320" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F7FDFF"/>
+      <stop offset="0.45" stop-color="#D8E4F7"/>
+      <stop offset="1" stop-color="#9AABC8"/>
+    </linearGradient>
+    <linearGradient id="blueGlow" x1="205" y1="166" x2="330" y2="286" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2AE1FF"/>
+      <stop offset="1" stop-color="#1073FF"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="10" stdDeviation="11" flood-color="#123A86" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="120" fill="url(#bg)"/>
+
+  <g filter="url(#shadow)">
+    <rect x="50" y="50" width="412" height="412" rx="100" fill="url(#bg)" opacity="0.24"/>
+  </g>
+
+  <g opacity="0.9">
+    <path d="M116 202C132 173 148 159 175 146" stroke="#D9FAFF" stroke-width="5" stroke-linecap="round"/>
+    <path d="M171 131C194 122 214 121 234 125" stroke="#D9FAFF" stroke-width="5" stroke-linecap="round"/>
+  </g>
+
+  <g transform="translate(0 0)">
+    <g opacity="0.95">
+      <rect x="95" y="196" width="105" height="119" rx="8" fill="#2F70E1"/>
+      <text x="147" y="268" font-size="15" font-weight="900" fill="#EEF6FF" text-anchor="middle" font-family="Arial, sans-serif">MATH</text>
+
+      <rect x="95" y="238" width="105" height="119" rx="8" fill="#0E9E6F"/>
+      <text x="147" y="310" font-size="16" font-weight="900" fill="#F2FFF7" text-anchor="middle" font-family="Arial, sans-serif">SCIENCE</text>
+
+      <rect x="95" y="280" width="105" height="119" rx="8" fill="#C63A2C"/>
+      <text x="147" y="352" font-size="15" font-weight="900" fill="#FFF5F3" text-anchor="middle" font-family="Arial, sans-serif">ENGLISH</text>
+
+      <rect x="95" y="322" width="105" height="119" rx="8" fill="#F2B115"/>
+      <text x="147" y="394" font-size="14" font-weight="900" fill="#FFFCEA" text-anchor="middle" font-family="Arial, sans-serif">TECHNICAL</text>
+    </g>
+
+    <g transform="translate(0 0)">
+      <circle cx="355" cy="171" r="69" fill="#0E3F94" opacity="0.82"/>
+      <circle cx="355" cy="171" r="57" fill="#0A5FC8" opacity="0.3"/>
+      <path d="M299 172C311 131 343 110 382 117C416 124 440 147 446 180C451 211 435 245 398 263C363 280 319 279 294 253C281 240 282 194 299 172Z" fill="#0F2F7B" opacity="0.8"/>
+      <path d="M310 171C321 142 343 128 375 127C395 128 417 136 433 153" stroke="#8FEAFA" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M316 207C331 226 354 238 382 239C404 240 426 231 440 220" stroke="#8FEAFA" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M294 161C319 156 336 142 346 123" stroke="#8FEAFA" stroke-width="2.2" stroke-linecap="round"/>
+      <path d="M392 142C409 146 423 154 437 171" stroke="#8FEAFA" stroke-width="2.2" stroke-linecap="round"/>
+    </g>
+
+    <g>
+      <circle cx="277" cy="189" r="62" fill="url(#plastic)"/>
+      <path d="M242 170C246 149 261 136 282 136H293C313 136 327 148 330 171C327 176 320 178 314 178H248C244 178 242 176 242 170Z" fill="#0F1A49" opacity="0.52"/>
+      <circle cx="256" cy="185" r="13" fill="#15D6FF"/>
+      <circle cx="298" cy="185" r="13" fill="#15D6FF"/>
+      <path d="M252 216C262 227 273 233 289 233C305 233 316 227 326 216" stroke="#0A5CFF" stroke-width="6" stroke-linecap="round"/>
+      <path d="M260 203C266 209 273 212 281 212C289 212 296 209 302 203" stroke="#DDF9FF" stroke-width="4" stroke-linecap="round"/>
+      <rect x="176" y="247" width="212" height="40" rx="16" fill="#D9E6FF"/>
+      <path d="M176 284H388V295C388 303 381 310 373 310H191C183 310 176 303 176 295V284Z" fill="#1A2B5F"/>
+      <path d="M185 284C194 263 214 248 236 248H328C351 248 370 263 379 284H185Z" fill="#E6EFFF" opacity="0.9"/>
+      <path d="M202 161L222 132L247 161" stroke="#0A73FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path d="M209 156V124H241V156" stroke="#0A73FF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </g>
+
+    <g>
+      <path d="M342 256H431C443 256 452 265 452 277V334C452 346 443 355 431 355H345L334 256H342Z" fill="#C7D9FF"/>
+      <path d="M348 286H434" stroke="#0A5DED" stroke-width="5" stroke-linecap="round"/>
+      <path d="M348 312H430" stroke="#0A5DED" stroke-width="5" stroke-linecap="round"/>
+      <path d="M358 256L373 355" stroke="#0A5DED" stroke-width="5" stroke-linecap="round"/>
+      <path d="M264 272H327" stroke="#D9E9FF" stroke-width="4" stroke-linecap="round"/>
+    </g>
+
+    <g>
+      <path d="M178 158L144 170L156 188L186 172L178 158Z" fill="#F8D75D"/>
+      <path d="M170 122L182 152L146 160L170 122Z" fill="#F8D75D"/>
+      <path d="M170 185L143 204L155 220L183 196L170 185Z" fill="#F8D75D"/>
+      <path d="M169 170C182 159 196 154 217 156" stroke="#FFD84A" stroke-width="4" stroke-linecap="round"/>
+      <path d="M170 170C179 157 185 148 187 134" stroke="#FFD84A" stroke-width="4" stroke-linecap="round"/>
+      <path d="M170 170C181 176 191 187 197 202" stroke="#FFD84A" stroke-width="4" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <g>
+    <text x="256" y="440" font-size="75" font-weight="900" fill="#FFFFFF" text-anchor="middle" font-family="Arial, sans-serif">Isidore</text>
+    <text x="361" y="440" font-size="75" font-weight="900" fill="#C0F6FF" text-anchor="middle" font-family="Arial, sans-serif">AI</text>
+    <path d="M116 466C176 486 204 492 256 492C314 492 338 485 396 466" stroke="#66E6FF" stroke-width="8" stroke-linecap="round"/>
+  </g>
+</svg>
