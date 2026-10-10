@@ -8,8 +8,8 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;500;600;700&display=swap" rel="stylesheet"><!-- MathJax --><script>
 window.MathJax = {
     tex: {
-        inlineMath: [['\', '\']],
-        displayMath: [['\', '\']]
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
     },
     svg: {
         fontCache: 'global'
@@ -387,160 +387,61 @@ function formatAI(text) {
 
     const formulas = [];
 
-
     function proteger(formula) {
-
-        const id =
-            `___FORMULA_${formulas.length}___`;
-
+        const id = `___FORMULA_${formulas.length}___`;
         formulas.push(formula);
-
         return id;
     }
 
-
     /* Formules $$ ... $$ */
+    safe = safe.replace(/\$\$([\s\S]*?)\$\$/g, function(match, formula) {
+        return proteger("\\(" + formula.trim() + "\\)");
+    });
 
-    safe = safe.replace(
-        /\$\$([\s\S]*?)\$\$/g,
-        function(match, formula) {
+    /* Formules \[ ... \] */
+    safe = safe.replace(/\\\[([\s\S]*?)\\\]/g, function(match, formula) {
+        return proteger("\\(" + formula.trim() + "\\)");
+    });
 
-            return proteger(
-                "\" +
-                formula.trim() +
-                "\"
-            );
-        }
-    );
-
-
-    /* Formules ... */
-
-    safe = safe.replace(
-        /\\([\s\S]*?)\\/g,
-        function(match, formula) {
-
-            return proteger(
-                "\" +
-                formula.trim() +
-                "\"
-            );
-        }
-    );
-
+    /* Formules \( ... \) */
+    safe = safe.replace(/\\\(([\s\S]*?)\\\)/g, function(match, formula) {
+        return proteger("\\(" + formula.trim() + "\\)");
+    });
 
     /* Formules $ ... $ */
-
-    safe = safe.replace(
-        /(?<!\$)\$([^$\n]+?)\$(?!\$)/g,
-        function(match, formula) {
-
-            return proteger(
-                "\" +
-                formula.trim() +
-                "\"
-            );
-        }
-    );
-
-
-    /* Formules ... */
-
-    safe = safe.replace(
-        /\\([\s\S]*?)\\/g,
-        function(match, formula) {
-
-            return proteger(
-                "\" +
-                formula.trim() +
-                "\"
-            );
-        }
-    );
-
+    safe = safe.replace(/(?<!\$)\$([^$\n]+?)\$(?!\$)/g, function(match, formula) {
+        return proteger("\\(" + formula.trim() + "\\)");
+    });
 
     /* Sécurité HTML */
-
     safe = safe
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
 
-
     /* Titres */
-
-    safe = safe.replace(
-        /^### (.*)$/gm,
-        "<h3>$1</h3>"
-    );
-
-    safe = safe.replace(
-        /^## (.*)$/gm,
-        "<h2>$1</h2>"
-    );
-
-    safe = safe.replace(
-        /^# (.*)$/gm,
-        "<h1>$1</h1>"
-    );
-
+    safe = safe.replace(/^### (.*)$/gm, "<h3>$1</h3>");
+    safe = safe.replace(/^## (.*)$/gm, "<h2>$1</h2>");
+    safe = safe.replace(/^# (.*)$/gm, "<h1>$1</h1>");
 
     /* Gras */
-
-    safe = safe.replace(
-        /\*\*(.*?)\*\*/g,
-        "<strong>$1</strong>"
-    );
-
+    safe = safe.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
 
     /* Listes */
-
-    safe = safe.replace(
-        /^\s*[-•*] (.*)$/gm,
-        "<li>$1</li>"
-    );
-
-
-    safe = safe.replace(
-        /(<li>.*?<\/li>(?:<br>)?)+/gs,
-        function(match) {
-
-            return "<ul>" +
-                   match +
-                   "</ul>";
-        }
-    );
-
+    safe = safe.replace(/^\s*[-•*] (.*)$/gm, "<li>$1</li>");
+    safe = safe.replace(/(<li>.*?<\/li>(?:<br>)?)+/gs, function(match) {
+        return "<ul>" + match + "</ul>";
+    });
 
     /* Sauts de ligne */
-
-    safe = safe.replace(
-        /\n\n+/g,
-        "<br><br>"
-    );
-
-    safe = safe.replace(
-        /\n/g,
-        "<br>"
-    );
-
+    safe = safe.replace(/\n\n+/g, "<br><br>");
+    safe = safe.replace(/\n/g, "<br>");
 
     /* Restaurer les formules */
-
-    formulas.forEach(
-        function(formula, index) {
-
-            const id =
-                `___FORMULA_${index}___`;
-
-            safe =
-                safe.replace(
-                    id,
-                    formula
-                );
-        }
-    );
-
+    formulas.forEach(function(formula, index) {
+        const id = `___FORMULA_${index}___`;
+        safe = safe.replace(id, formula);
+    });
 
     return safe;
 }
@@ -549,47 +450,25 @@ function formatAI(text) {
 function extraireTexteReponse(payload) {
 
     if (typeof payload === "string") {
-
         return payload;
     }
 
-
-    if (
-        payload &&
-        typeof payload === "object"
-    ) {
-
+    if (payload && typeof payload === "object") {
         const candidates = [
-
             payload.answer,
-
             payload.response,
-
             payload.result,
-
             payload.output,
-
             payload.message,
-
             payload.text
-
         ];
 
-
-        for (
-            const candidate of candidates
-        ) {
-
-            if (
-                typeof candidate === "string" &&
-                candidate.trim()
-            ) {
-
+        for (const candidate of candidates) {
+            if (typeof candidate === "string" && candidate.trim()) {
                 return candidate;
             }
         }
     }
-
 
     return "Aucune réponse reçue.";
 }
@@ -597,35 +476,19 @@ function extraireTexteReponse(payload) {
 
 async function envoyer() {
 
-    const question =
-        zone.value.trim();
+    const question = zone.value.trim();
 
-
-    if (
-        !question ||
-        sendButton.disabled
-    ) {
-
+    if (!question || sendButton.disabled) {
         return;
     }
 
-
     ajouterQuestion(question);
-
-
     zone.value = "";
-
     zone.style.height = "auto";
-
-
     sendButton.disabled = true;
-
     zone.disabled = true;
 
-
-    const answerElement =
-        ajouterReponse();
-
+    const answerElement = ajouterReponse();
 
     answerElement.innerHTML = `
         <div class="loading">
@@ -635,149 +498,67 @@ async function envoyer() {
         </div>
     `;
 
-
     faireDefiler();
 
-
     try {
-
-        const response =
-            await fetch(
-                "/api/solve",
-                {
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    body:
-                        JSON.stringify({
-                            problem:
-                                question
-                        })
-                }
-            );
-
+        const response = await fetch("/api/solve", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ problem: question })
+        });
 
         let data;
 
-
         try {
-
-            data =
-                await response.json();
-
+            data = await response.json();
         } catch (jsonError) {
-
-            throw new Error(
-                "Le serveur a répondu avec une réponse invalide."
-            );
+            throw new Error("Le serveur a répondu avec une réponse invalide.");
         }
-
 
         if (!response.ok) {
-
-            throw new Error(
-                data?.error ||
-                "Erreur du serveur"
-            );
+            throw new Error(data?.error || "Erreur du serveur");
         }
 
+        const answerText = extraireTexteReponse(data);
+        answerElement.innerHTML = formatAI(answerText);
 
-        const answerText =
-            extraireTexteReponse(data);
-
-
-        answerElement.innerHTML =
-            formatAI(answerText);
-
-
-        if (
-            window.MathJax &&
-            typeof window.MathJax.typesetPromise ===
-                "function"
-        ) {
-
-            window.MathJax.typesetPromise(
-                [answerElement]
-            );
+        if (window.MathJax && typeof window.MathJax.typesetPromise === "function") {
+            window.MathJax.typesetPromise([answerElement]);
         }
-
 
     } catch (error) {
-
-        answerElement.innerHTML =
-            "<strong>❌ Erreur :</strong> " +
-            (
-                error?.message ||
-                "Une erreur inconnue s'est produite."
-            );
-
-
+        answerElement.innerHTML = "<strong>❌ Erreur :</strong> " + (error?.message || "Une erreur inconnue s'est produite.");
     } finally {
-
         sendButton.disabled = false;
-
         zone.disabled = false;
-
         zone.focus();
-
         faireDefiler();
     }
 }
 
 
 function faireDefiler() {
-
-    setTimeout(
-        () => {
-
-            window.scrollTo({
-                top:
-                    document.body.scrollHeight,
-
-                behavior:
-                    "smooth"
-            });
-
-        },
-        100
-    );
+    setTimeout(() => {
+        window.scrollTo({
+            top: document.body.scrollHeight,
+            behavior: "smooth"
+        });
+    }, 100);
 }
 
 
-zone.addEventListener(
-    "input",
-    function() {
+zone.addEventListener("input", function() {
+    this.style.height = "auto";
+    this.style.height = Math.min(this.scrollHeight, 180) + "px";
+});
 
-        this.style.height = "auto";
 
-        this.style.height =
-            Math.min(
-                this.scrollHeight,
-                180
-            ) + "px";
+zone.addEventListener("keydown", function(event) {
+    if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        envoyer();
     }
-);
-
-
-zone.addEventListener(
-    "keydown",
-    function(event) {
-
-        if (
-            event.key === "Enter" &&
-            !event.shiftKey
-        ) {
-
-            event.preventDefault();
-
-            envoyer();
-        }
-    }
-);
+});
 
 </script></body>
    </html>
