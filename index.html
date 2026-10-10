@@ -1,564 +1,504 @@
-<!DOCTYPE html><html lang="fr">
+<!DOCTYPE html>
+<html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0"><title>IsidoreAI</title>
-    <link rel="manifest" href="/manifest.json">
-    <!-- Noto Serif --><link rel="preconnect" href="https://fonts.googleapis.com">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#2563eb">
+<title>IsidoreAI</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;500;600;700&display=swap" rel="stylesheet"><!-- MathJax --><script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
 window.MathJax = {
-    tex: {
-        inlineMath: [['$', '$'], ['\\(', '\\)']],
-        displayMath: [['$$', '$$'], ['\\[', '\\]']]
-    },
-    svg: {
-        fontCache: 'global'
-    }
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']]
+  },
+  svg: { fontCache: 'global' }
 };
-</script><script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script><style>
-
-* {
-    box-sizing: border-box;
+</script>
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+:root {
+  --bg: #ffffff;
+  --panel: #f7f7f8;
+  --text: #202123;
+  --muted: #707070;
+  --border: #e5e5e5;
+  --user-bubble: #f1f1f1;
+  --accent: #2563eb;
 }
-
-html {
-    scroll-behavior: smooth;
-}
-
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
 body {
-    margin: 0;
-    background: #ffffff;
-    color: #202123;
-    font-family: "Noto Serif", Georgia, serif;
+  margin: 0; background: var(--bg); color: var(--text);
+  font-family: "Noto Serif", Georgia, serif;
 }
+body.dark {
+  --bg: #18191b; --panel: #232427; --text: #f2f2f2;
+  --muted: #b0b0b0; --border: #3a3b3e; --user-bubble: #303136;
+}
+button, input, textarea { font: inherit; }
+button { cursor: pointer; }
+button:disabled { opacity: .55; cursor: not-allowed; }
 
-/* HEADER */
-
+/* Top bar */
 header {
-    height: 60px;
-    display: flex;
-    align-items: center;
-    padding: 0 20px;
-    border-bottom: 1px solid #e5e5e5;
-    background: #ffffff;
-    position: sticky;
-    top: 0;
-    z-index: 10;
+  height: 62px; display: flex; align-items: center; gap: 12px;
+  padding: 0 16px; border-bottom: 1px solid var(--border);
+  background: var(--bg); position: sticky; top: 0; z-index: 10;
+}
+.icon-button {
+  width: 42px; height: 42px; display: inline-flex; align-items: center;
+  justify-content: center; border: 1px solid transparent; border-radius: 12px;
+  background: transparent; color: var(--text); font-size: 23px;
+}
+.icon-button:hover { background: var(--panel); }
+.logo { font-size: 21px; font-weight: 700; }
+.logo span { font-weight: 400; }
+.header-spacer { flex: 1; }
+.new-chat-top {
+  width: auto; height: 40px; padding: 0 12px; border: 1px solid var(--border);
+  border-radius: 12px; background: var(--bg); color: var(--text); font-size: 14px;
 }
 
-.logo {
-    font-size: 21px;
-    font-weight: 700;
+/* Sidebar */
+.scrim {
+  position: fixed; inset: 0; background: rgba(0,0,0,.38);
+  z-index: 20; display: none;
 }
-
-.logo span {
-    font-weight: 400;
+.scrim.open { display: block; }
+.sidebar {
+  position: fixed; z-index: 21; top: 0; bottom: 0; left: 0;
+  width: min(310px, 86vw); padding: 14px; background: var(--panel);
+  border-right: 1px solid var(--border); transform: translateX(-105%);
+  transition: transform .22s ease; display: flex; flex-direction: column;
 }
-
-/* PAGE */
-
-main {
-    max-width: 900px;
-    margin: auto;
-    padding: 45px 20px 120px;
+.sidebar.open { transform: translateX(0); }
+.sidebar-head { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.sidebar-title { flex: 1; font-weight: 700; font-size: 19px; }
+.sidebar-action {
+  display: flex; align-items: center; gap: 11px; width: 100%;
+  padding: 12px 13px; margin: 3px 0; border: 0; border-radius: 12px;
+  background: transparent; color: var(--text); text-align: left; font-size: 15px;
 }
-
-/* WELCOME */
-
-.welcome {
-    text-align: center;
-    margin-bottom: 45px;
+.sidebar-action:hover { background: var(--bg); }
+.sidebar-action .symbol { width: 23px; text-align: center; font-size: 19px; }
+.history-heading { margin: 20px 8px 8px; color: var(--muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+.search-box {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--border);
+  border-radius: 11px; background: var(--bg); color: var(--text); outline: none;
 }
-
-.welcome h1 {
-    margin: 0 0 12px;
-    font-size: 34px;
-    font-weight: 700;
+.history-list { flex: 1; overflow-y: auto; margin-top: 7px; }
+.history-item {
+  width: 100%; display: block; text-align: left; padding: 11px 12px;
+  border: 0; border-radius: 10px; background: transparent; color: var(--text);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px;
 }
+.history-item:hover, .history-item.active { background: var(--bg); }
+.history-empty { color: var(--muted); font-size: 13px; padding: 12px; line-height: 1.5; }
+.sidebar-footer { border-top: 1px solid var(--border); padding-top: 10px; }
 
-.welcome p {
-    margin: 0;
-    color: #777;
-    font-size: 17px;
-}
-
-/* CONVERSATION */
-
-#conversation {
-    width: 100%;
-}
-
-/* USER MESSAGE */
-
-.user-block {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    margin-bottom: 35px;
-}
-
-.user-name {
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 8px;
-    color: #555;
-}
-
+/* Main conversation */
+main { max-width: 900px; margin: auto; padding: 42px 20px 145px; }
+.welcome { text-align: center; margin: 0 0 42px; }
+.welcome h1 { margin: 0 0 12px; font-size: 32px; font-weight: 700; }
+.welcome p { margin: 0; color: var(--muted); font-size: 16px; }
+#conversation { width: 100%; }
+.user-block { display: flex; flex-direction: column; align-items: flex-end; margin-bottom: 30px; }
+.user-name { font-size: 13px; font-weight: 600; margin-bottom: 7px; color: var(--muted); }
 .user-message {
-    max-width: 80%;
-    background: #f1f1f1;
-    padding: 13px 17px;
-    border-radius: 18px;
-    font-size: 16px;
-    line-height: 1.6;
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
+  max-width: 85%; background: var(--user-bubble); padding: 13px 17px;
+  border-radius: 18px; font-size: 16px; line-height: 1.6;
+  white-space: pre-wrap; overflow-wrap: anywhere;
 }
+.ai-block { width: 100%; margin-bottom: 40px; }
+.ai-name { font-size: 16px; font-weight: 700; margin-bottom: 12px; }
+.ai-answer { width: 100%; font-size: 16px; line-height: 1.85; overflow-wrap: anywhere; }
+.ai-answer h1, .ai-answer h2, .ai-answer h3 { font-weight: 700; line-height: 1.35; margin: 25px 0 12px; }
+.ai-answer h1 { font-size: 27px; }
+.ai-answer h2 { font-size: 22px; }
+.ai-answer h3 { font-size: 19px; }
+.ai-answer p { margin: 0 0 15px; }
+.ai-answer ul, .ai-answer ol { padding-left: 28px; margin: 10px 0 18px; }
+.ai-answer li { margin-bottom: 8px; }
+.ai-answer code { background: var(--panel); padding: 2px 6px; border-radius: 5px; font-family: monospace; }
+.ai-answer a { color: var(--accent); }
+.ai-answer mjx-container[display="true"] { margin: 24px 0 !important; overflow-x: auto; overflow-y: hidden; }
+.loading { display: inline-flex; gap: 5px; margin: 5px 0; }
+.loading span { width: 7px; height: 7px; background: var(--muted); border-radius: 50%; animation: bounce 1.2s infinite; }
+.loading span:nth-child(2) { animation-delay: .15s; }
+.loading span:nth-child(3) { animation-delay: .3s; }
+@keyframes bounce { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(-6px); } }
 
-/* AI ANSWER */
-
-.ai-block {
-    width: 100%;
-    margin-bottom: 45px;
-}
-
-.ai-name {
-    font-size: 16px;
-    font-weight: 700;
-    margin-bottom: 14px;
-}
-
-.ai-answer {
-    width: 100%;
-    font-size: 17px;
-    line-height: 1.85;
-    color: #202123;
-    overflow-wrap: anywhere;
-}
-
-/* TEXT FORMATTING */
-
-.ai-answer h1,
-.ai-answer h2,
-.ai-answer h3 {
-    font-weight: 700;
-    line-height: 1.35;
-    margin-top: 25px;
-    margin-bottom: 12px;
-}
-
-.ai-answer h1 {
-    font-size: 28px;
-}
-
-.ai-answer h2 {
-    font-size: 23px;
-}
-
-.ai-answer h3 {
-    font-size: 20px;
-}
-
-.ai-answer p {
-    margin: 0 0 16px;
-}
-
-.ai-answer ul,
-.ai-answer ol {
-    padding-left: 28px;
-    margin-top: 10px;
-    margin-bottom: 18px;
-}
-
-.ai-answer li {
-    margin-bottom: 8px;
-}
-
-.ai-answer strong {
-    font-weight: 700;
-}
-
-.ai-answer code {
-    background: #f3f3f3;
-    padding: 2px 6px;
-    border-radius: 5px;
-    font-family: monospace;
-}
-
-/* FORMULA */
-
-.ai-answer mjx-container[display="true"] {
-    margin: 25px 0 !important;
-    overflow-x: auto;
-    overflow-y: hidden;
-}
-
-/* INPUT */
-
+/* Input */
 .input-area {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(255,255,255,.96);
-    border-top: 1px solid #e5e5e5;
-    padding: 12px 15px;
-    backdrop-filter: blur(8px);
+  position: fixed; bottom: 0; left: 0; right: 0; background: color-mix(in srgb, var(--bg) 94%, transparent);
+  border-top: 1px solid var(--border); padding: 12px 15px calc(12px + env(safe-area-inset-bottom));
+  backdrop-filter: blur(8px); z-index: 9;
 }
-
 .input-inner {
-    max-width: 900px;
-    margin: auto;
-    display: flex;
-    align-items: flex-end;
-    gap: 10px;
-    border: 1px solid #ccc;
-    border-radius: 17px;
-    padding: 8px;
-    background: #fff;
+  max-width: 900px; margin: auto; display: flex; align-items: flex-end; gap: 10px;
+  border: 1px solid #aaa; border-radius: 17px; padding: 8px; background: var(--bg);
 }
-
 textarea {
-    flex: 1;
-    border: 0;
-    outline: none;
-    resize: none;
-    min-height: 45px;
-    max-height: 180px;
-    padding: 10px;
-    font-family: "Noto Serif", Georgia, serif;
-    font-size: 16px;
-    line-height: 1.5;
-    color: #202123;
+  flex: 1; border: 0; outline: none; resize: none; min-height: 45px; max-height: 180px;
+  padding: 10px; background: transparent; color: var(--text);
+  font-family: "Noto Serif", Georgia, serif; font-size: 16px; line-height: 1.5;
+}
+textarea::placeholder { color: #999; }
+.send-button {
+  flex: 0 0 45px; width: 45px; height: 45px; border: 0; border-radius: 12px;
+  background: var(--text); color: var(--bg); font-size: 20px;
 }
 
-textarea::placeholder {
-    color: #999;
+/* Settings dialog */
+.dialog-scrim {
+  position: fixed; inset: 0; z-index: 30; display: none; align-items: center;
+  justify-content: center; padding: 20px; background: rgba(0,0,0,.42);
 }
-
-button {
-    width: 45px;
-    height: 45px;
-    border: 0;
-    border-radius: 12px;
-    background: #202123;
-    color: white;
-    font-size: 20px;
-    cursor: pointer;
+.dialog-scrim.open { display: flex; }
+.dialog {
+  width: min(420px, 100%); padding: 22px; border-radius: 18px;
+  background: var(--bg); color: var(--text); box-shadow: 0 18px 60px rgba(0,0,0,.2);
 }
-
-button:disabled {
-    opacity: .5;
-    cursor: not-allowed;
+.dialog h2 { margin: 0 0 8px; font-size: 22px; }
+.dialog p { color: var(--muted); font-size: 14px; line-height: 1.6; }
+.dialog-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; }
+.dialog-row button, .dialog-close {
+  border: 1px solid var(--border); background: var(--panel); color: var(--text);
+  padding: 9px 12px; border-radius: 10px;
 }
-
-/* LOADING */
-
-.loading {
-    display: inline-flex;
-    gap: 5px;
-    margin-top: 5px;
-}
-
-.loading span {
-    width: 7px;
-    height: 7px;
-    background: #777;
-    border-radius: 50%;
-    animation: bounce 1.2s infinite;
-}
-
-.loading span:nth-child(2) {
-    animation-delay: .15s;
-}
-
-.loading span:nth-child(3) {
-    animation-delay: .3s;
-}
-
-@keyframes bounce {
-    0%, 60%, 100% {
-        transform: translateY(0);
-    }
-
-    30% {
-        transform: translateY(-6px);
-    }
-}
-
-/* MOBILE */
-
+.dialog-close { width: 100%; margin-top: 10px; }
 @media (max-width: 600px) {
-
-    header {
-        padding: 0 15px;
-    }
-
-    main {
-        padding: 32px 16px 120px;
-    }
-
-    .welcome h1 {
-        font-size: 27px;
-    }
-
-    .welcome p {
-        font-size: 15px;
-    }
-
-    .user-message {
-        max-width: 88%;
-        font-size: 15px;
-    }
-
-    .ai-answer {
-        font-size: 16px;
-        line-height: 1.8;
-    }
-
-    .ai-answer h1 {
-        font-size: 25px;
-    }
-
-    .ai-answer h2 {
-        font-size: 21px;
-    }
-
-    .ai-answer h3 {
-        font-size: 19px;
-    }
+  header { padding: 0 10px; }
+  main { padding: 32px 16px 135px; }
+  .welcome h1 { font-size: 26px; }
+  .welcome p { font-size: 14px; }
+  .user-message { max-width: 90%; font-size: 15px; }
+  .ai-answer { font-size: 16px; line-height: 1.8; }
+  .new-chat-top { font-size: 13px; padding: 0 9px; }
 }
+</style>
+</head>
+<body>
+<header>
+  <button class="icon-button" id="menuButton" type="button" aria-label="Ouvrir le menu" aria-expanded="false">☰</button>
+  <div class="logo">🤖 Isidore<span>AI</span></div>
+  <div class="header-spacer"></div>
+  <button class="new-chat-top" id="topNewChat" type="button">＋ Nouveau</button>
+</header>
 
-</style></head><body><header><div class="logo">
-🤖 Isidore<span>AI</span>
-</div></header><main><section class="welcome">
+<div class="scrim" id="menuScrim"></div>
+<aside class="sidebar" id="sidebar" aria-label="Menu principal">
+  <div class="sidebar-head">
+    <div class="sidebar-title">IsidoreAI</div>
+    <button class="icon-button" id="closeMenu" type="button" aria-label="Fermer le menu">✕</button>
+  </div>
+  <button class="sidebar-action" id="newChatButton" type="button"><span class="symbol">＋</span> Nouvelle conversation</button>
+  <button class="sidebar-action" id="searchHistoryButton" type="button"><span class="symbol">⌕</span> Rechercher</button>
+  <div class="history-heading">Historique</div>
+  <input class="search-box" id="historySearch" type="search" placeholder="Rechercher une conversation…" aria-label="Rechercher dans l’historique">
+  <div class="history-list" id="historyList"></div>
+  <div class="sidebar-footer">
+    <button class="sidebar-action" id="settingsButton" type="button"><span class="symbol">⚙</span> Paramètres</button>
+    <button class="sidebar-action" id="aboutButton" type="button"><span class="symbol">ⓘ</span> À propos d’IsidoreAI</button>
+  </div>
+</aside>
+
+<main>
+  <section class="welcome" id="welcome">
     <h1>Bonjour, je suis IsidoreAI</h1>
-    <p>Que voulez-vous savoir aujourd'hui ?</p>
-</section><section id="conversation"></section></main><div class="input-area">
-    <div class="input-inner">
-        <textarea id="question" placeholder="Écrivez votre question..." rows="1"></textarea>
-        <button id="sendButton" type="button" onclick="envoyer()">➤</button>
+    <p>Que voulez-vous savoir aujourd’hui ?</p>
+  </section>
+  <section id="conversation" aria-live="polite"></section>
+</main>
+
+<div class="input-area">
+  <div class="input-inner">
+    <textarea id="question" placeholder="Écrivez votre question…" rows="1" aria-label="Votre question"></textarea>
+    <button class="send-button" id="sendButton" type="button" aria-label="Envoyer la question">➤</button>
+  </div>
+</div>
+
+<div class="dialog-scrim" id="settingsScrim" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+  <div class="dialog">
+    <h2 id="settingsTitle">Paramètres</h2>
+    <p>Ces réglages s’appliquent à cet appareil.</p>
+    <div class="dialog-row">
+      <span>Apparence sombre</span>
+      <button id="themeToggle" type="button">Activer</button>
     </div>
-</div><script>
+    <div class="dialog-row">
+      <span>Effacer l’historique local</span>
+      <button id="clearHistoryButton" type="button">Effacer</button>
+    </div>
+    <button class="dialog-close" id="closeSettings" type="button">Fermer</button>
+  </div>
+</div>
+
+<div class="dialog-scrim" id="aboutScrim" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+  <div class="dialog">
+    <h2 id="aboutTitle">À propos d’IsidoreAI</h2>
+    <p>IsidoreAI est un assistant intelligent pour l’apprentissage, les mathématiques, les sciences et l’éducation technique.</p>
+    <p>Les conversations enregistrées dans l’historique sont stockées localement sur cet appareil. Elles ne sont pas synchronisées entre plusieurs appareils.</p>
+    <button class="dialog-close" id="closeAbout" type="button">Fermer</button>
+  </div>
+</div>
+
+<script>
+"use strict";
 
 const zone = document.getElementById("question");
 const conversation = document.getElementById("conversation");
 const sendButton = document.getElementById("sendButton");
+const welcome = document.getElementById("welcome");
+const sidebar = document.getElementById("sidebar");
+const menuButton = document.getElementById("menuButton");
+const menuScrim = document.getElementById("menuScrim");
+const historyList = document.getElementById("historyList");
+const historySearch = document.getElementById("historySearch");
+const STORAGE_KEY = "isidoreai_conversations_v1";
+const ACTIVE_KEY = "isidoreai_active_conversation_v1";
+const THEME_KEY = "isidoreai_theme_v1";
 
-function ajouterQuestion(question) {
+let conversations = [];
+let activeConversationId = null;
+let sending = false;
 
-    const bloc = document.createElement("div");
-
-    bloc.className = "user-block";
-
-    bloc.innerHTML = `
-        <div class="user-name">Vous</div>
-        <div class="user-message"></div>
-    `;
-
-    bloc.querySelector(".user-message").textContent = question;
-
-    conversation.appendChild(bloc);
-
-    return bloc;
+function makeId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
-
-function ajouterReponse() {
-
-    const bloc = document.createElement("div");
-
-    bloc.className = "ai-block";
-
-    bloc.innerHTML = `
-        <div class="ai-name">IsidoreAI</div>
-        <div class="ai-answer"></div>
-    `;
-
-    conversation.appendChild(bloc);
-
-    return bloc.querySelector(".ai-answer");
+function loadConversations() {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+    conversations = Array.isArray(parsed) ? parsed.filter(item =>
+      item && typeof item.id === "string" && Array.isArray(item.messages)
+    ) : [];
+  } catch {
+    conversations = [];
+  }
+  activeConversationId = localStorage.getItem(ACTIVE_KEY);
+  if (!conversations.some(item => item.id === activeConversationId)) {
+    activeConversationId = null;
+  }
 }
 
+function saveConversations() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
+    if (activeConversationId) localStorage.setItem(ACTIVE_KEY, activeConversationId);
+    else localStorage.removeItem(ACTIVE_KEY);
+  } catch (error) {
+    console.warn("Impossible d’enregistrer l’historique local.", error);
+  }
+  renderHistory();
+}
+
+function getActiveConversation() {
+  return conversations.find(item => item.id === activeConversationId) || null;
+}
+
+function ensureConversation(question) {
+  let current = getActiveConversation();
+  if (!current) {
+    current = {
+      id: makeId(),
+      title: question.slice(0, 55) || "Nouvelle conversation",
+      updatedAt: Date.now(),
+      messages: []
+    };
+    conversations.unshift(current);
+    activeConversationId = current.id;
+  } else if (current.messages.length === 0) {
+    current.title = question.slice(0, 55) || "Nouvelle conversation";
+  }
+  current.updatedAt = Date.now();
+  saveConversations();
+  return current;
+}
+
+function renderHistory() {
+  const query = historySearch.value.trim().toLocaleLowerCase("fr");
+  historyList.replaceChildren();
+  const filtered = [...conversations]
+    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0))
+    .filter(item => {
+      const haystack = [item.title, ...item.messages.map(message => message.text || "")].join(" ").toLocaleLowerCase("fr");
+      return haystack.includes(query);
+    });
+
+  if (!filtered.length) {
+    const empty = document.createElement("div");
+    empty.className = "history-empty";
+    empty.textContent = conversations.length ? "Aucun résultat pour cette recherche." : "Vos conversations apparaîtront ici après votre première question.";
+    historyList.appendChild(empty);
+    return;
+  }
+
+  for (const item of filtered) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "history-item" + (item.id === activeConversationId ? " active" : "");
+    button.textContent = item.title || "Conversation";
+    button.title = item.title || "Conversation";
+    button.addEventListener("click", () => {
+      openConversation(item.id);
+      closeMenuPanel();
+    });
+    historyList.appendChild(button);
+  }
+}
+
+function appendUserMessage(text) {
+  const block = document.createElement("div");
+  block.className = "user-block";
+  const name = document.createElement("div");
+  name.className = "user-name";
+  name.textContent = "Vous";
+  const message = document.createElement("div");
+  message.className = "user-message";
+  message.textContent = text;
+  block.append(name, message);
+  conversation.appendChild(block);
+}
+
+function appendAIMessage(text, isError = false) {
+  const block = document.createElement("div");
+  block.className = "ai-block";
+  const name = document.createElement("div");
+  name.className = "ai-name";
+  name.textContent = "IsidoreAI";
+  const answer = document.createElement("div");
+  answer.className = "ai-answer";
+  if (isError) {
+    const strong = document.createElement("strong");
+    strong.textContent = "❌ Erreur : ";
+    answer.append(strong, document.createTextNode(text));
+  } else {
+    answer.innerHTML = formatAI(text);
+    typesetMath(answer);
+  }
+  block.append(name, answer);
+  conversation.appendChild(block);
+  return answer;
+}
+
+function renderConversation() {
+  conversation.replaceChildren();
+  const current = getActiveConversation();
+  const hasMessages = !!(current && current.messages.length);
+  welcome.style.display = hasMessages ? "none" : "block";
+  if (!current) return;
+  for (const message of current.messages) {
+    if (message.role === "user") appendUserMessage(message.text || "");
+    else if (message.role === "assistant") appendAIMessage(message.text || "", !!message.error);
+  }
+  faireDefiler();
+}
+
+function openConversation(id) {
+  activeConversationId = id;
+  saveConversations();
+  renderConversation();
+}
+
+function newConversation() {
+  if (sending) return;
+  activeConversationId = null;
+  saveConversations();
+  conversation.replaceChildren();
+  welcome.style.display = "block";
+  zone.value = "";
+  zone.style.height = "auto";
+  zone.focus();
+}
+
+function openMenuPanel() {
+  sidebar.classList.add("open");
+  menuScrim.classList.add("open");
+  menuButton.setAttribute("aria-expanded", "true");
+}
+function closeMenuPanel() {
+  sidebar.classList.remove("open");
+  menuScrim.classList.remove("open");
+  menuButton.setAttribute("aria-expanded", "false");
+}
+menuButton.addEventListener("click", openMenuPanel);
+document.getElementById("closeMenu").addEventListener("click", closeMenuPanel);
+menuScrim.addEventListener("click", closeMenuPanel);
+document.getElementById("newChatButton").addEventListener("click", () => { newConversation(); closeMenuPanel(); });
+document.getElementById("topNewChat").addEventListener("click", newConversation);
+document.getElementById("searchHistoryButton").addEventListener("click", () => {
+  historySearch.focus();
+});
+historySearch.addEventListener("input", renderHistory);
+
+function openDialog(id) {
+  document.getElementById(id).classList.add("open");
+}
+function closeDialog(id) {
+  document.getElementById(id).classList.remove("open");
+}
+document.getElementById("settingsButton").addEventListener("click", () => {
+  updateThemeButton();
+  closeMenuPanel();
+  openDialog("settingsScrim");
+});
+document.getElementById("aboutButton").addEventListener("click", () => {
+  closeMenuPanel();
+  openDialog("aboutScrim");
+});
+document.getElementById("closeSettings").addEventListener("click", () => closeDialog("settingsScrim"));
+document.getElementById("closeAbout").addEventListener("click", () => closeDialog("aboutScrim"));
+document.getElementById("settingsScrim").addEventListener("click", event => {
+  if (event.target.id === "settingsScrim") closeDialog("settingsScrim");
+});
+document.getElementById("aboutScrim").addEventListener("click", event => {
+  if (event.target.id === "aboutScrim") closeDialog("aboutScrim");
+});
+
+function updateThemeButton() {
+  document.getElementById("themeToggle").textContent =
+    document.body.classList.contains("dark") ? "Désactiver" : "Activer";
+}
+function applySavedTheme() {
+  if (localStorage.getItem(THEME_KEY) === "dark") document.body.classList.add("dark");
+  updateThemeButton();
+}
+document.getElementById("themeToggle").addEventListener("click", () => {
+  document.body.classList.toggle("dark");
+  try {
+    localStorage.setItem(THEME_KEY, document.body.classList.contains("dark") ? "dark" : "light");
+  } catch {}
+  updateThemeButton();
+});
+document.getElementById("clearHistoryButton").addEventListener("click", () => {
+  const confirmed = window.confirm("Voulez-vous vraiment effacer toutes les conversations enregistrées sur cet appareil ?");
+  if (!confirmed) return;
+  conversations = [];
+  activeConversationId = null;
+  saveConversations();
+  renderConversation();
+  closeDialog("settingsScrim");
+});
 
 function formatAI(text) {
+  let safe = String(text ?? "");
+  const formulas = [];
+  function protect(formula) {
+    const id = `___FORMULA_${formulas.length}___`;
+    formulas.push(formula);
+    return id;
+  }
 
-    let safe = String(text ?? "");
+  safe = safe.replace(/\$\$([\s\S]*?)\$\$/g, (_, formula) => protect("\\(" + formula.trim() + "\\)"));
+  safe = safe.replace(/\\\[([\s\S]*?)\\\]/g, (_, formula) => protect("\\(" + formula.trim() + "\\)"));
+  safe = safe.replace(/\\\(([\s\S]*?)\\\)/g, (_, formula) => protect("\\(" + formula.trim() + "\\)"));
+  safe = safe.replace(/(?<!\$)\$([^$\n]+?)\$(?!\$)/g, (_, formula) => protect("\\(" + formula.trim() + "\\)"));
 
-    const formulas = [];
-
-    function proteger(formula) {
-        const id = `___FORMULA_${formulas.length}___`;
-        formulas.push(formula);
-        return id;
-    }
-
-    /* Formules $$ ... $$ */
-    safe = safe.replace(/\$\$([\s\S]*?)\$\$/g, function(match, formula) {
-        return proteger("\\(" + formula.trim() + "\\)");
-    });
-
-    /* Formules \[ ... \] */
-    safe = safe.replace(/\\\[([\s\S]*?)\\\]/g, function(match, formula) {
-        return proteger("\\(" + formula.trim() + "\\)");
-    });
-
-    /* Formules \( ... \) */
-    safe = safe.replace(/\\\(([\s\S]*?)\\\)/g, function(match, formula) {
-        return proteger("\\(" + formula.trim() + "\\)");
-    });
-
-    /* Formules $ ... $ */
-    safe = safe.replace(/(?<!\$)\$([^$\n]+?)\$(?!\$)/g, function(match, formula) {
-        return proteger("\\(" + formula.trim() + "\\)");
-    });
-
-    /* Sécurité HTML */
-    safe = safe
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-
-    /* Titres */
-    safe = safe.replace(/^### (.*)$/gm, "<h3>$1</h3>");
-    safe = safe.replace(/^## (.*)$/gm, "<h2>$1</h2>");
-    safe = safe.replace(/^# (.*)$/gm, "<h1>$1</h1>");
-
-    /* Gras */
-    safe = safe.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
-
-    /* Listes */
-    safe = safe.replace(/^\s*[-•*] (.*)$/gm, "<li>$1</li>");
-    safe = safe.replace(/(<li>.*?<\/li>(?:<br>)?)+/gs, function(match) {
-        return "<ul>" + match + "</ul>";
-    });
-
-    /* Sauts de ligne */
-    safe = safe.replace(/\n\n+/g, "<br><br>");
-    safe = safe.replace(/\n/g, "<br>");
-
-    /* Restaurer les formules */
-    formulas.forEach(function(formula, index) {
-        const id = `___FORMULA_${index}___`;
-        safe = safe.replace(id, formula);
-    });
-
-    return safe;
-}
-
-
-function extraireTexteReponse(payload) {
-
-    if (typeof payload === "string") {
-        return payload;
-    }
-
-    if (payload && typeof payload === "object") {
-        const candidates = [
-            payload.answer,
-            payload.response,
-            payload.result,
-            payload.output,
-            payload.message,
-            payload.text
-        ];
-
-        for (const candidate of candidates) {
-            if (typeof candidate === "string" && candidate.trim()) {
-                return candidate;
-            }
-        }
-    }
-
-    return "Aucune réponse reçue.";
-}
-
-
-async function envoyer() {
-
-    const question = zone.value.trim();
-
-    if (!question || sendButton.disabled) {
-        return;
-    }
-
-    ajouterQuestion(question);
-    zone.value = "";
-    zone.style.height = "auto";
-    sendButton.disabled = true;
-    zone.disabled = true;
-
-    const answerElement = ajouterReponse();
-
-    answerElement.innerHTML = `
-        <div class="loading">
-            <span></span>
-            <span></span>
-            <span></span>
-        </div>
-    `;
-
-    faireDefiler();
-
-    try {
-        const response = await fetch("/api/solve", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ problem: question })
-        });
-
-        let data;
-
-        try {
-            data = await response.json();
-        } catch (jsonError) {
-            throw new Error("Le serveur a répondu avec une réponse invalide.");
-        }
-
-        if (!response.ok) {
-            throw new Error(data?.error || "Erreur du serveur");
-        }
-
-        const answerText = extraireTexteReponse(data);
-        answerElement.innerHTML = formatAI(answerText);
-
-        if (window.MathJax && typeof window.MathJax.typesetPromise === "function") {
-            window.MathJax.typesetPromise([answerElement]);
-        }
-
-    } catch (error) {
-        answerElement.innerHTML = "<strong>❌ Erreur :</strong> " + (error?.message || "Une erreur inconnue s'est produite.");
-    } finally {
-        sendButton.disabled = false;
-        zone.disabled = false;
-        zone.focus();
-        faireDefiler();
-    }
-}
-
-
-function faireDefiler() {
-    setTimeout(() => {
-        window.scrollTo({
-            top: document.body.scrollHeight,
-            behavior: "smooth"
-        });
-    }, 100);
-}
-
-
-zone.addEventListener("input", function() {
-    this.style.height = "auto";
-    this.style.height = Math.min(this.scrollHeight, 180) + "px";
-});
-
-
-zone.addEventListener("keydown", function(event) {
-    if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
-        envoyer();
-    }
-});
-
-</script></body>
-   </html>
+  safe = safe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  safe = safe.replace(/^### (.*)$/gm, "<h3>$1</h3>");
+ 
