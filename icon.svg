@@ -1,59 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
-  <title id="title">IsidoreAI</title>
-  <desc id="desc">Icon for the IsidoreAI application.</desc>
-
-  <defs>
-    <linearGradient id="bg" x1="64" y1="40" x2="440" y2="470" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#0B84F5"/>
-      <stop offset="1" stop-color="#0B3CC8"/>
-    </linearGradient>
-
-    <linearGradient id="panel" x1="120" y1="100" x2="388" y2="420" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#F4FBFF"/>
-      <stop offset="1" stop-color="#D7E9FF"/>
-    </linearGradient>
-
-    <linearGradient id="accent" x1="180" y1="150" x2="330" y2="320" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#7FE8FF"/>
-      <stop offset="1" stop-color="#1C7DFF"/>
-    </linearGradient>
-
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%">
-      <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#123A86" flood-opacity="0.35"/>
-    </filter>
-  </defs>
-
-  <rect width="512" height="512" rx="118" fill="url(#bg)"/>
-  <rect x="56" y="56" width="400" height="400" rx="96" fill="rgba(255,255,255,0.10)"/>
-
-  <g filter="url(#shadow)">
-    <rect x="96" y="110" width="320" height="292" rx="66" fill="url(#panel)"/>
-  </g>
-
-  <g opacity="0.92">
-    <circle cx="368" cy="172" r="64" fill="#0F2F7B" opacity="0.22"/>
-    <circle cx="368" cy="172" r="48" fill="url(#accent)" opacity="0.95"/>
-    <path d="M347 148h42v48h-42z" fill="#EAFBFF" opacity="0.9"/>
-    <path d="M343 188c12 18 22 27 38 31 19 5 32-2 43-18" fill="none" stroke="#EAFBFF" stroke-width="8" stroke-linecap="round"/>
-  </g>
-
-  <g>
-    <path d="M212 168h88v32h-28v126h28v32h-88v-32h28V200h-28z" fill="#153B86"/>
-    <path d="M154 286c20-18 42-27 66-27 19 0 36 6 51 18 8 6 15 15 21 26l-42 22c-4-7-9-12-15-17-8-6-16-9-26-9-10 0-19 4-27 11l-28-24z" fill="#1D66F2" opacity="0.9"/>
-    <path d="M217 311c9 13 21 19 35 19 18 0 31-9 39-26l34 19c-18 32-44 48-80 48-37 0-64-16-81-46l53-14z" fill="#0E97FF" opacity="0.95"/>
-  </g>
-
-  <g opacity="0.9">
-    <path d="M130 152l28 20-28 20-28-20 28-20z" fill="#F8D75D"/>
-    <path d="M131 106l17 29-17 28-17-28 17-29z" fill="#F8D75D"/>
-    <path d="M176 106l17 29-17 28-17-28 17-29z" fill="#F8D75D"/>
-    <path d="M142 256l34-18 32 18-32 18-34-18z" fill="#F8D75D" opacity="0.8"/>
-  </g>
-
-  <g>
-    <path d="M150 383h212c14 0 25 11 25 25v19H125v-19c0-14 11-25 25-25z" fill="#1A2B5F" opacity="0.16"/>
-    <path d="M142 352h226c18 0 32 14 32 32v16H110v-16c0-18 14-32 32-32z" fill="#D9E9FF"/>
-    <path d="M154 364h202" stroke="#0A5DED" stroke-width="6" stroke-linecap="round"/>
-    <path d="M150 389h210" stroke="#0A5DED" stroke-width="6" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="90" fill="#000000"/>
+  <g fill="none" stroke="#ffffff" stroke-width="28" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M256 100 C218 100 192 127 192 164 L192 205"/>
+    <path d="M192 205 L257 242"/>
+    <path d="M257 242 L320 205"/>
+    <path d="M320 205 L320 285"/>
+    <path d="M320 285 L256 322"/>
+    <path d="M256 322 L192 285"/>
+    <path d="M192 285 L192 348"/>
+    <path d="M192 348 C192 385 218 412 256 412"/>
+    <path d="M256 412 C294 412 320 385 320 348"/>
+    <path d="M320 348 L320 307"/>
+    <path d="M320 307 L384 270"/>
+    <path d="M384 270 C402 239 390 208 359 190"/>
+    <path d="M359 190 L320 205"/>
+    <path d="M192 205 L153 228"/>
+    <path d="M153 228 C122 246 110 277 128 308"/>
+    <path d="M128 308 L192 348"/>
   </g>
 </svg>
