@@ -2,21 +2,32 @@
   "background_color": "#ffffff",
   "dir": "ltr",
   "display": "standalone",
-  "name": "isidoreAI",
+  "name": "IsidoreAI",
+  "short_name": "IsidoreAI",
   "orientation": "any",
   "scope": "/",
-  "short_name": "isidoreAI",
   "start_url": "/",
   "theme_color": "#2563eb",
   "id": "/",
   "description": "IsidoreAI is an intelligent AI assistant for learning, mathematics, science and technical education.",
   "icons": [
     {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
       "src": "/icon.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
-
