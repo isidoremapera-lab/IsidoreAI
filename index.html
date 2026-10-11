@@ -752,5 +752,20 @@ applySavedTheme();
 renderHistory();
 renderConversation();
 </script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/service-worker.js")
+      .then(registration => {
+        console.log("Service worker activé :", registration.scope);
+      })
+      .catch(error => {
+        console.error("Erreur du service worker :", error);
+      });
+  });
+}
+</script>
+
 </body>
 </html>
