@@ -1,21 +1,51 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="90" fill="#000000"/>
-  <g fill="none" stroke="#ffffff" stroke-width="28" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M256 100 C218 100 192 127 192 164 L192 205"/>
-    <path d="M192 205 L257 242"/>
-    <path d="M257 242 L320 205"/>
-    <path d="M320 205 L320 285"/>
-    <path d="M320 285 L256 322"/>
-    <path d="M256 322 L192 285"/>
-    <path d="M192 285 L192 348"/>
-    <path d="M192 348 C192 385 218 412 256 412"/>
-    <path d="M256 412 C294 412 320 385 320 348"/>
-    <path d="M320 348 L320 307"/>
-    <path d="M320 307 L384 270"/>
-    <path d="M384 270 C402 239 390 208 359 190"/>
-    <path d="M359 190 L320 205"/>
-    <path d="M192 205 L153 228"/>
-    <path d="M153 228 C122 246 110 277 128 308"/>
-    <path d="M128 308 L192 348"/>
-  </g>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="face" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#DBEAFE"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Fond bleu -->
+  <rect width="512" height="512" rx="100" fill="url(#bg)"/>
+
+  <!-- Antenne -->
+  <path d="M256 91 V126" stroke="#FFFFFF" stroke-width="17" stroke-linecap="round"/>
+  <circle cx="256" cy="77" r="19" fill="#FFFFFF"/>
+
+  <!-- Oreilles -->
+  <rect x="103" y="204" width="42" height="84" rx="20" fill="#93C5FD"/>
+  <rect x="367" y="204" width="42" height="84" rx="20" fill="#93C5FD"/>
+
+  <!-- Tête du robot -->
+  <rect x="130" y="130" width="252" height="250" rx="75"
+        fill="url(#face)" stroke="#FFFFFF" stroke-width="7"/>
+
+  <!-- Visage -->
+  <rect x="158" y="174" width="196" height="150" rx="46" fill="#172554"/>
+
+  <!-- Yeux lumineux -->
+  <rect x="189" y="213" width="39" height="49" rx="19" fill="#38BDF8"/>
+  <rect x="284" y="213" width="39" height="49" rx="19" fill="#38BDF8"/>
+
+  <!-- Sourire -->
+  <path d="M214 282 Q256 309 298 282"
+        fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round"/>
+
+  <!-- Cou -->
+  <path d="M225 380 V397 M287 380 V397"
+        fill="none" stroke="#FFFFFF" stroke-width="17" stroke-linecap="round"/>
+
+  <!-- Base du robot -->
+  <rect x="185" y="394" width="142" height="25" rx="12" fill="#FFFFFF"/>
+
+  <!-- Petits détails décoratifs -->
+  <circle cx="91" cy="145" r="7" fill="#FFFFFF" opacity="0.8"/>
+  <circle cx="421" cy="164" r="6" fill="#FFFFFF" opacity="0.8"/>
+  <circle cx="98" cy="349" r="6" fill="#BFDBFE"/>
+  <circle cx="414" cy="354" r="8" fill="#BFDBFE"/>
 </svg>
