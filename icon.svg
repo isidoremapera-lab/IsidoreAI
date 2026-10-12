@@ -19,33 +19,3 @@
 
   <!-- Oreilles -->
   <rect x="103" y="204" width="42" height="84" rx="20" fill="#93C5FD"/>
-  <rect x="367" y="204" width="42" height="84" rx="20" fill="#93C5FD"/>
-
-  <!-- Tête du robot -->
-  <rect x="130" y="130" width="252" height="250" rx="75"
-        fill="url(#face)" stroke="#FFFFFF" stroke-width="7"/>
-
-  <!-- Visage -->
-  <rect x="158" y="174" width="196" height="150" rx="46" fill="#172554"/>
-
-  <!-- Yeux lumineux -->
-  <rect x="189" y="213" width="39" height="49" rx="19" fill="#38BDF8"/>
-  <rect x="284" y="213" width="39" height="49" rx="19" fill="#38BDF8"/>
-
-  <!-- Sourire -->
-  <path d="M214 282 Q256 309 298 282"
-        fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round"/>
-
-  <!-- Cou -->
-  <path d="M225 380 V397 M287 380 V397"
-        fill="none" stroke="#FFFFFF" stroke-width="17" stroke-linecap="round"/>
-
-  <!-- Base du robot -->
-  <rect x="185" y="394" width="142" height="25" rx="12" fill="#FFFFFF"/>
-
-  <!-- Petits détails décoratifs -->
-  <circle cx="91" cy="145" r="7" fill="#FFFFFF" opacity="0.8"/>
-  <circle cx="421" cy="164" r="6" fill="#FFFFFF" opacity="0.8"/>
-  <circle cx="98" cy="349" r="6" fill="#BFDBFE"/>
-  <circle cx="414" cy="354" r="8" fill="#BFDBFE"/>
-</svg>
