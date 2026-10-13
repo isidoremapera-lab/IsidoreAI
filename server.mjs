@@ -5,7 +5,13 @@ import { fileURLToPath } from "url";
 
 /* CONFIGURATION ISIDOREAI */
 const PORT = process.env.PORT || 10000;
-const GEMINI_MODEL = "gemini-3.5-flash-lite";
+
+const GEMINI_MODEL =
+  process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
+
+const GEMINI_FALLBACK_MODEL =
+  process.env.GEMINI_FALLBACK_MODEL || "gemini-3.1-flash-lite";
+
 const API_KEY = process.env.GEMINI_API_KEY;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
