@@ -3,24 +3,21 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-/* CONFIGURATION ISIDOREAI */
+/* CONFIGURATION ISIDORE AI */
 const PORT = process.env.PORT || 10000;
-
-const GEMINI_MODEL =
-  process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
-
-const GEMINI_FALLBACK_MODEL =
-  process.env.GEMINI_FALLBACK_MODEL || "gemini-3.1-flash-lite";
-
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
+const GEMINI_FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || "gemini-3.1-flash-lite";
 const API_KEY = process.env.GEMINI_API_KEY;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const SERVER_VERSION = "ISIDOREAI-3.5-IMAGE-004";
+const SERVER_VERSION = "ISIDORE-AI-CONTEXT-005";
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_BODY_BYTES = 8 * 1024 * 1024;
+const MAX_HISTORY_MESSAGES = 16;
+const MAX_HISTORY_CHARS = 16000;
 
 console.log("==============================================");
-console.log("ISIDOREAI - SERVEUR", SERVER_VERSION);
+console.log("ISIDORE AI - SERVEUR", SERVER_VERSION);
 console.log("MODELE :", GEMINI_MODEL);
 console.log("DOSSIER :", __dirname);
 console.log("==============================================");
@@ -31,12 +28,14 @@ if (!API_KEY) {
 }
 
 const SYSTEM_INSTRUCTION = `
-Tu es ISIDOREAI, un assistant intelligent généraliste.
-Tu réponds principalement en français, sauf si l'utilisateur demande explicitement une autre langue.
-Tu aides en mathématiques, sciences, éducation, informatique, mécanique, électricité, économie, langues, histoire, géographie et culture générale.
+Tu es Isidore AI, un assistant intelligent généraliste, fiable, pédagogique et attentif au contexte.
+Tu réponds principalement en français, sauf si l'utilisateur demande explicitement une autre langue ou écrit clairement dans une autre langue.
+Tu aides en mathématiques, sciences, éducation, informatique, mécanique, électricité, économie, langues, histoire, géographie, commerce, rédaction et culture générale.
 Comprends l'utilisateur même s'il fait des fautes, oublie des accents, utilise des abréviations ou mélange plusieurs langues.
-Réponds clairement, précisément et de manière pédagogique. Pour un problème mathématique ou scientifique, présente les données, l'inconnue, la formule, les étapes de calcul et le résultat avec unité. N'invente pas de faits. Signale les incertitudes.
-Si l'utilisateur joint une image, observe-la attentivement. Lis le texte visible si possible, décris les éléments pertinents et réponds à la question de l'utilisateur en t'appuyant sur l'image. Si le texte ou un détail est illisible, dis-le clairement au lieu de deviner.
+IMPORTANT : utilise les messages précédents de la conversation pour comprendre les demandes courtes ou dépendantes du contexte comme « continue », « explique davantage », « le niveau d'études », « fais la suite » ou « donne un exemple ». Ne recommence pas par une salutation inutile à chaque message et ne traite pas une précision comme une nouvelle question sans lien avec ce qui précède.
+Réponds clairement, précisément et de manière suffisamment détaillée. Structure les réponses avec des titres, étapes, exemples ou tableaux lorsque cela est utile. Pour un problème mathématique ou scientifique, présente les données, l'inconnue, la formule, les étapes de calcul et le résultat avec unité. N'invente pas de faits et signale les incertitudes.
+Si l'utilisateur joint une image, observe-la attentivement. Lis le texte visible si possible, décris les éléments pertinents et réponds à la demande en t'appuyant sur l'image. Si le texte ou un détail est illisible, dis-le clairement au lieu de deviner.
+Si une demande est ambiguë, utilise le contexte déjà disponible avant de demander une précision.
 `;
 
 function sendJSON(res, status, data) {
@@ -69,15 +68,40 @@ function readBody(req) {
   });
 }
 
-async function askGemini(problem, image = null) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
-  const parts = [{ text: `Réponds à la demande suivante :\n\n${problem}` }];
-  if (image) {
-    parts.push({ inline_data: { mime_type: image.mimeType, data: image.data } });
+function sanitizeHistory(history) {
+  if (!Array.isArray(history)) return [];
+  let remaining = MAX_HISTORY_CHARS;
+  const clean = [];
+  for (const message of history.slice(-MAX_HISTORY_MESSAGES)) {
+    if (!message || !["user", "assistant"].includes(message.role) || typeof message.text !== "string") continue;
+    const text = message.text.trim();
+    if (!text) continue;
+    const clipped = text.slice(0, remaining);
+    if (!clipped) break;
+    clean.push({ role: message.role === "assistant" ? "model" : "user", parts: [{ text: clipped }] });
+    remaining -= clipped.length;
+    if (remaining <= 0) break;
   }
+  // Gemini expects alternating user/model turns; discard a leading model turn if present.
+  while (clean.length && clean[0].role !== "user") clean.shift();
+  // Merge consecutive turns of the same role into one content entry.
+  const normalized = [];
+  for (const item of clean) {
+    const last = normalized[normalized.length - 1];
+    if (last && last.role === item.role) last.parts.push(...item.parts);
+    else normalized.push(item);
+  }
+  return normalized;
+}
+
+async function askGemini(problem, image = null, history = []) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+  const currentParts = [{ text: `Réponds à la demande suivante en tenant compte du contexte de la conversation :\n\n${problem}` }];
+  if (image) currentParts.push({ inline_data: { mime_type: image.mimeType, data: image.data } });
+  const contents = [...sanitizeHistory(history), { role: "user", parts: currentParts }];
   const requestData = {
     system_instruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-    contents: [{ role: "user", parts }],
+    contents,
     generationConfig: { maxOutputTokens: 3000, temperature: 0.3 }
   };
   let response;
@@ -123,23 +147,20 @@ const mimeTypes = {
   ".txt": "text/plain; charset=utf-8", ".webmanifest": "application/manifest+json; charset=utf-8"
 };
 const allowedImageTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
-
 const server = http.createServer(async (req, res) => {
   try {
     let pathname;
     try { pathname = decodeURIComponent(new URL(req.url, `http://${req.headers.host || "localhost"}`).pathname); }
     catch { sendJSON(res, 400, { error: "Adresse de requête invalide." }); return; }
-
     if (req.method === "GET" && pathname === "/health") {
-      sendJSON(res, 200, { status: "ok", service: "IsidoreAI", version: SERVER_VERSION, model: GEMINI_MODEL }); return;
+      sendJSON(res, 200, { status: "ok", service: "Isidore AI", version: SERVER_VERSION, model: GEMINI_MODEL }); return;
     }
     if (req.method === "GET" && pathname === "/diagnostic") {
-      sendJSON(res, 200, { status: "ok", service: "IsidoreAI", server: SERVER_VERSION, model: GEMINI_MODEL, node: process.version,
+      sendJSON(res, 200, { status: "ok", service: "Isidore AI", server: SERVER_VERSION, model: GEMINI_MODEL, node: process.version,
         indexExists: fs.existsSync(path.join(__dirname, "index.html")),
         manifestExists: fs.existsSync(path.join(__dirname, "manifest.json")),
         iconExists: fs.existsSync(path.join(__dirname, "icon.svg")) }); return;
     }
-
     if (pathname === "/api/solve" && req.method === "POST") {
       let body;
       try { body = await readBody(req); }
@@ -147,12 +168,10 @@ const server = http.createServer(async (req, res) => {
       let data;
       try { data = JSON.parse(body); }
       catch { sendJSON(res, 400, { error: "Requête JSON invalide." }); return; }
-
       const problem = typeof data?.problem === "string" ? data.problem.trim() : "";
       const incomingImage = data?.image;
       if (!problem && !incomingImage) { sendJSON(res, 400, { error: "Veuillez saisir une question ou joindre une image." }); return; }
       if (problem.length > 20000) { sendJSON(res, 400, { error: "Votre question est trop longue. Veuillez la raccourcir." }); return; }
-
       let image = null;
       if (incomingImage !== undefined && incomingImage !== null) {
         const mimeType = incomingImage?.mimeType;
@@ -167,11 +186,11 @@ const server = http.createServer(async (req, res) => {
         if (estimatedBytes > MAX_IMAGE_BYTES) { sendJSON(res, 413, { error: "L’image dépasse la limite de 5 Mo." }); return; }
         image = { mimeType, data: base64 };
       }
-
-      console.log("NOUVELLE DEMANDE | texte :", problem.length, "caractères | image :", image ? "oui" : "non", "| modèle :", GEMINI_MODEL);
+      const history = sanitizeHistory(data?.history);
+      console.log("NOUVELLE DEMANDE | texte :", problem.length, "caractères | historique :", history.length, "messages | image :", image ? "oui" : "non", "| modèle :", GEMINI_MODEL);
       try {
         const prompt = problem || "Analyse cette image et explique clairement ce qu’elle montre.";
-        const answer = await askGemini(prompt, image);
+        const answer = await askGemini(prompt, image, history);
         sendJSON(res, 200, { answer, model: GEMINI_MODEL, server: SERVER_VERSION });
       } catch (error) {
         console.error("ERREUR DE TRAITEMENT :", error.message);
@@ -179,7 +198,6 @@ const server = http.createServer(async (req, res) => {
       }
       return;
     }
-
     if (req.method !== "GET" && req.method !== "HEAD") { sendJSON(res, 405, { error: "Méthode HTTP non autorisée." }); return; }
     let requestedPath = pathname;
     if (requestedPath === "/" || requestedPath === "") requestedPath = "/index.html";
@@ -202,10 +220,9 @@ const server = http.createServer(async (req, res) => {
     if (!res.headersSent && !res.destroyed) sendJSON(res, 500, { error: "Une erreur interne est survenue." });
   }
 });
-
 server.listen(PORT, "0.0.0.0", () => {
   console.log("==============================================");
-  console.log("ISIDOREAI EST EN LIGNE | version :", SERVER_VERSION);
+  console.log("ISIDORE AI EST EN LIGNE | version :", SERVER_VERSION);
   console.log("PORT :", PORT, "| MODELE :", GEMINI_MODEL);
   console.log("==============================================");
 });
