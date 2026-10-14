@@ -10,7 +10,7 @@ const GEMINI_FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || "gemini-3.1-f
 const API_KEY = process.env.GEMINI_API_KEY;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const SERVER_VERSION = "ISIDORE-AI-CONTEXT-005";
+const SERVER_VERSION = "ISIDORE-AI-CONTEXT-006";
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const MAX_BODY_BYTES = 8 * 1024 * 1024;
 const MAX_HISTORY_MESSAGES = 16;
@@ -186,8 +186,11 @@ const server = http.createServer(async (req, res) => {
         if (estimatedBytes > MAX_IMAGE_BYTES) { sendJSON(res, 413, { error: "L’image dépasse la limite de 5 Mo." }); return; }
         image = { mimeType, data: base64 };
       }
-      const history = sanitizeHistory(data?.history);
-      console.log("NOUVELLE DEMANDE | texte :", problem.length, "caractères | historique :", history.length, "messages | image :", image ? "oui" : "non", "| modèle :", GEMINI_MODEL);
+      // Garder l'historique au format { role, text } jusqu'à askGemini.
+      // askGemini appelle sanitizeHistory une seule fois pour convertir les rôles Gemini.
+      const history = Array.isArray(data?.history) ? data.history : [];
+      const cleanHistory = sanitizeHistory(history);
+      console.log("NOUVELLE DEMANDE | texte :", problem.length, "caractères | historique :", cleanHistory.length, "messages | image :", image ? "oui" : "non", "| modèle :", GEMINI_MODEL);
       try {
         const prompt = problem || "Analyse cette image et explique clairement ce qu’elle montre.";
         const answer = await askGemini(prompt, image, history);
