@@ -30,6 +30,27 @@ main{max-width:900px;margin:auto;padding:42px 20px 145px}.welcome{text-align:cen
 .attach-button{flex:0 0 45px;width:45px;height:45px;border:1px solid var(--border);border-radius:50%;background:var(--panel);color:var(--text);font-family:Arial,sans-serif;font-size:30px;line-height:1;display:inline-flex;align-items:center;justify-content:center}.attach-button:hover{background:var(--user-bubble)}.image-preview-row{display:none;max-width:900px;margin:0 auto 8px}.image-preview-row.visible{display:flex;align-items:center;gap:10px}.image-preview-thumb{width:68px;height:68px;object-fit:cover;border-radius:10px;border:1px solid var(--border)}.image-preview-label{color:var(--muted);font-size:13px;flex:1}.remove-image-button{border:1px solid var(--border);border-radius:50%;width:34px;height:34px;background:var(--panel);color:var(--text);font-size:18px}.message-image{display:block;max-width:min(320px,100%);max-height:300px;object-fit:contain;margin-top:8px;border-radius:12px}
 .dialog-scrim{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.42)}.dialog-scrim.open{display:flex}.dialog{width:min(420px,100%);padding:22px;border-radius:18px;background:var(--bg);color:var(--text);box-shadow:0 18px 60px rgba(0,0,0,.2)}.dialog h2{margin:0 0 8px;font-size:22px}.dialog p{color:var(--muted);font-size:14px;line-height:1.6}.dialog-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0}.dialog-row button,.dialog-close{border:1px solid var(--border);background:var(--panel);color:var(--text);padding:9px 12px;border-radius:10px}.dialog-close{width:100%;margin-top:10px}
 @media(max-width:600px){header{padding:0 10px}main{padding:32px 16px 135px}.welcome h1{font-size:26px}.welcome p{font-size:14px}.user-message{max-width:90%;font-size:15px}.ai-answer{font-size:16px;line-height:1.8}.new-chat-top{font-size:13px;padding:0 9px}}
+.input-inner {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.input-inner textarea {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  min-height: 36px;
+  max-height: 160px;
+  box-sizing: border-box;
+  resize: none;
+  overflow-y: auto;
+  line-height: 1.4;
+}
+
+.input-inner button {
+  flex-shrink: 0;
+  }
 </style>
 <body>
 <header><button class="icon-button" id="menuButton" type="button" aria-label="Ouvrir le menu" aria-expanded="false">☰</button><div class="logo">🤖 Isidore <span>AI</span></div><div class="header-spacer"></div><button class="new-chat-top" id="topNewChat" type="button">＋ Nouveau</button></header><div class="scrim" id="menuScrim"></div><aside class="sidebar" id="sidebar" aria-label="Menu principal">
@@ -77,6 +98,7 @@ main{max-width:900px;margin:auto;padding:42px 20px 145px}.welcome{text-align:cen
 "use strict";
 const zone=document.getElementById("question"),conversation=document.getElementById("conversation"),sendButton=document.getElementById("sendButton"),welcome=document.getElementById("welcome"),sidebar=document.getElementById("sidebar"),menuButton=document.getElementById("menuButton"),menuScrim=document.getElementById("menuScrim"),historyList=document.getElementById("historyList"),historySearch=document.getElementById("historySearch");
 const STORAGE_KEY="isidoreai_conversations_v1",ACTIVE_KEY="isidoreai_active_conversation_v1",THEME_KEY="isidoreai_theme_v1";
+  
   function ajusterHauteurZone() {
   zone.style.height = "auto";
   zone.style.height = Math.min(zone.scrollHeight, 160) + "px";
