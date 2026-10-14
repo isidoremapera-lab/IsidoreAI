@@ -76,7 +76,12 @@ main{max-width:900px;margin:auto;padding:42px 20px 145px}.welcome{text-align:cen
 </div><script> 
 "use strict";
 const zone=document.getElementById("question"),conversation=document.getElementById("conversation"),sendButton=document.getElementById("sendButton"),welcome=document.getElementById("welcome"),sidebar=document.getElementById("sidebar"),menuButton=document.getElementById("menuButton"),menuScrim=document.getElementById("menuScrim"),historyList=document.getElementById("historyList"),historySearch=document.getElementById("historySearch");
-const STORAGE_KEY="isidoreai_conversations_v1",ACTIVE_KEY="isidoreai_active_conversation_v1",THEME_KEY="isidoreai_theme_v1";
+const STORAGE_KEY="isidoreai_conversations_v1",ACTIVE_KEY="isidoreai_active_conversation_v1",THEME_KEY="isidoreai_theme_v1";function ajusterHauteurZone() {
+  zone.style.height = "auto";
+  zone.style.height = Math.min(zone.scrollHeight, 160) + "px";
+}
+
+zone.addEventListener("input", ajusterHauteurZone);
 function ajusterHauteurZone() {
   zone.style.height = "auto";
   zone.style.height = Math.min(zone.scrollHeight, 160) + "px";
