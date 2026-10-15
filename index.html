@@ -98,19 +98,23 @@ main{max-width:900px;margin:auto;padding:42px 20px 145px}.welcome{text-align:cen
 "use strict";
 const zone=document.getElementById("question"),conversation=document.getElementById("conversation"),sendButton=document.getElementById("sendButton"),welcome=document.getElementById("welcome"),sidebar=document.getElementById("sidebar"),menuButton=document.getElementById("menuButton"),menuScrim=document.getElementById("menuScrim"),historyList=document.getElementById("historyList"),historySearch=document.getElementById("historySearch");
 const STORAGE_KEY="isidoreai_conversations_v1",ACTIVE_KEY="isidoreai_active_conversation_v1",THEME_KEY="isidoreai_theme_v1";
+
+function ajusterHauteurZone() {
+  zone.style.height = "auto";
+  zone.style.height = Math.min(zone.scrollHeight, 160) + "px";
+  zone.style.overflowY = zone.scrollHeight > 160 ? "auto" : "hidden";
+}
+
+zone.addEventListener("input", ajusterHauteurZone);
   
   function ajusterHauteurZone() {
   zone.style.height = "auto";
   zone.style.height = Math.min(zone.scrollHeight, 160) + "px";
+  zone.style.overflowY = zone.scrollHeight > 160 ? "auto" : "hidden";
 }
 
 zone.addEventListener("input", ajusterHauteurZone);
-function ajusterHauteurZone() {
-  zone.style.height = "auto";
-  zone.style.height = Math.min(zone.scrollHeight, 160) + "px";
-}
 
-zone.addEventListener("input", ajusterHauteurZone);
 let conversations=[],activeConversationId=null,sending=false,selectedImage=null;
 function makeId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
 function loadConversations(){
