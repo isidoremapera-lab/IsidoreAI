@@ -148,18 +148,36 @@ document.getElementById("settingsButton").addEventListener("click",()=>{updateTh
 for(const id of ["settingsScrim","aboutScrim"])document.getElementById(id).addEventListener("click",e=>{if(e.target.id===id)closeDialog(id)});
 function updateThemeButton(){document.getElementById("themeToggle").textContent=document.body.classList.contains("dark")?"Désactiver":"Activer"}function applySavedTheme(){try{if(localStorage.getItem(THEME_KEY)==="dark")document.body.classList.add("dark")}catch(error){console.warn("Lecture du thème impossible.",error)}updateThemeButton()}
 document.getElementById("themeToggle").addEventListener("click",()=>{document.body.classList.toggle("dark");try{localStorage.setItem(THEME_KEY,document.body.classList.contains("dark")?"dark":"light")}catch{}updateThemeButton()});
-document.getElementById("clearHistoryButton").addEventListener("click",()=>{if(!window.confirm("Voulez-vous vraiment effacer toutes les conversations enregistrées sur cet appareil ?"))return;conversations=[];activeConversationId=null;saveConversations();renderConversation();closeDialog("settingsScrim")});
-const imageInput=document.getElementById("imageInput"),attachButton=document.getElementById("attachButton"),imagePreviewRow=document.getElementById("imagePreviewRow"),imagePreviewThumb=document.getElementById("imagePreviewThumb"),imagePreviewLabel=document.getElementById("imagePreviewLabel"),removeImageButton=document.getElementById("removeImageButton");
-attachButton.addEventListener("click",()=>{if(!sending)imageInput.click()});imageInput.addEventListener("change",async()=>{const file=imageInput.files&&imageInput.files[0];if(!file)return;if(!file.type.startsWith("image/")){alert("Veuillez choisir un fichier image.");imageInput.value="";return}if(file.size>12*1024*1024){alert("Cette image est trop volumineuse (maximum 12 Mo). Choisissez une image plus petite.");imageInput.value="";return}try{const dataUrl=await compressImage(file);selectedImage={dataUrl,mimeType:dataUrl.slice(5,dataUrl.indexOf(";")),name:file.name};imagePreviewThumb.src=dataUrl;imagePreviewLabel.textContent=file.name||"Image prête à être envoyée";imagePreviewRow.classList.add("visible");zone.focus()}catch{alert("Impossible de lire cette image. Essayez avec une autre image.")}imageInput.value=""});
-function compressImage(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onerror=reject;reader.onload=()=>{const image=new Image();image.onerror=reject;image.onload=()=>{const maxSide=1280,scale=Math.min(1,maxSide/Math.max(image.width,image.height)),canvas=document.createElement("canvas");canvas.width=Math.max(1,Math.round(image.width*scale));canvas.height=Math.max(1,Math.round(image.height*scale));canvas.getContext("2d").drawImage(image,0,0,canvas.width,canvas.height);resolve(canvas.toDataURL("image/jpeg",.82))};image.src=reader.result};reader.readAsDataURL(file)})}
-function removeSelectedImage(){selectedImage=null;imagePreviewThumb.removeAttribute("src");imagePreviewLabel.textContent="Image prête à être envoyée";imagePreviewRow.classList.remove("visible");imageInput.value=""}removeImageButton.addEventListener("click",removeSelectedImage);
-function formatAI(text){let safe=String(text??"");const formulas=[];function protect(f){const id=`___FORMULA_${formulas.length}___`;formulas.push(f);return id}safe=safe.replace(/\$\$([\s\S]*?)\$\$/g,(_,f)=>protect("\\("+f.trim()+"\\)"));safe=safe.replace(/\\\[([\s\S]*?)\\\]/g,(_,f)=>protect("\\("+f.trim()+"\\)"));safe=safe.replace(/\\\(([\s\S]*?)\\\)/g,(_,f)=>protect("\\("+f.trim()+"\\)"));safe=safe.replace(/(?<!\$)\$([^$\n]+?)\$(?!\$)/g,(_,f)=>protect("\\("+f.trim()+"\\)"));safe=safe.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");safe=safe.replace(/^### (.*)$/gm,"<h3>$1</h3>").replace(/^## (.*)$/gm,"<h2>$1</h2>").replace(/^# (.*)$/gm,"<h1>$1</h1>").replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>").replace(/^\s*[-•*] (.*)$/gm,"<li>$1</li>").replace(/(<li>.*?<\/li>(?:<br>)?)+/gs,m=>"<ul>"+m+"</ul>").replace(/\n\n+/g,"<br><br>").replace(/\n/g,"<br>");formulas.forEach((f,i)=>safe=safe.replace(`___FORMULA_${i}___`,f));return safe}
-function typesetMath(element){if(window.MathJax&&typeof window.MathJax.typesetPromise==="function")window.MathJax.typesetPromise([element]).catch(e=>console.warn("MathJax:",e))}
-function extraireTexteReponse(payload){if(typeof payload==="string")return payload;if(payload&&typeof payload==="object")for(const key of ["answer","response","result","output","message","text"])if(typeof payload[key]==="string"&&payload[key].trim())return payload[key];return "Aucune réponse reçue."}
-async function envoyer(){const question=zone.value.trim();if((!question&&!selectedImage)||sending)return;const imageForSending=selectedImage?{...selectedImage}:null,displayQuestion=question||"Veuillez examiner cette image.",current=ensureConversation(displayQuestion);current.messages.push({role:"user",text:displayQuestion,hasImage:!!imageForSending,time:Date.now()});current.updatedAt=Date.now();saveConversations();appendUserMessage(question,imageForSending?imageForSending.dataUrl:null);welcome.style.display="none";zone.value="";removeSelectedImage();zone.style.height="auto";zone.disabled=true;sendButton.disabled=true;sending=true;
-const answerElement=document.createElement("div"),block=document.createElement("div"),name=document.createElement("div");answerElement.className="ai-answer";block.className="ai-block";name.className="ai-name";name.textContent="Isidore AI";const loading=document.createElement("div");loading.className="loading";loading.innerHTML="<span></span><span></span><span></span>";answerElement.appendChild(loading);block.append(name,answerElement);conversation.appendChild(block);faireDefiler();
-try{const response=await fetch("/api/solve",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({problem:question||"Analyse l’image jointe et réponds à la question implicite si aucune consigne n’est écrite.",history:current.messages.slice(0,-1).filter(m=>(m.role==="user"||m.role==="assistant")&&!m.error).slice(-16).map(m=>({role:m.role,text:String(m.text||"").slice(0,4000)})),image:imageForSending?{mimeType:imageForSending.mimeType,data:imageForSending.dataUrl.split(",")[1],name:imageForSending.name}:null})});let data;try{data=await response.json()}catch{throw new Error("Le serveur a répondu avec une réponse invalide.")}if(!response.ok)throw new Error(data?.error||"Erreur du serveur.");const answerText=extraireTexteReponse(data);answerElement.innerHTML=formatAI(answerText);typesetMath(answerElement);const latest=getActiveConversation();if(latest){latest.messages.push({role:"assistant",text:answerText,time:Date.now()});latest.updatedAt=Date.now();saveConversations()}}catch(error){const message=error?.message||"Une erreur inconnue s’est produite.";answerElement.replaceChildren();const strong=document.createElement("strong");strong.textContent="❌ Erreur : ";answerElement.append(strong,document.createTextNode(message));const latest=getActiveConversation();if(latest){latest.messages.push({role:"assistant",text:message,error:true,time:Date.now()});latest.updatedAt=Date.now();saveConversations()}}finally{zone.disabled=false;sendButton.disabled=false;sending=false;zone.focus();faireDefiler();renderHistory()}}
-function faireDefiler(){setTimeout(()=>window.scrollTo({top:document.body.scrollHeight,behavior:"smooth"}),100)}sendButton.addEventListener("click",envoyer);zone.addEventListener("input",function(){this.style.height="auto";zone.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();envoyer()}});document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeMenuPanel();closeDialog("settingsScrim");closeDialog("aboutScrim")}});loadConversations();applySavedTheme();renderHistory();renderConversation();
+document.getElementById("clearHistoryButton").addEventListener("click",()=>{if(!window.confirm("Voulez-vous vraiment effacer toutes les conversations enregistrées sur cet appareil ?"))return;conversations=[];activeConversationId=null;saveConversations();function faireDefiler() {
+  setTimeout(() => {
+    window.scrollTo({
+      top: document.body.scrollHeight,
+      behavior: "smooth"
+    });
+  }, 100);
+}
+
+sendButton.addEventListener("click", envoyer);
+
+zone.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    envoyer();
+  }
+});
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") {
+    closeMenuPanel();
+    closeDialog("settingsScrim");
+    closeDialog("aboutScrim");
+  }
+});
+
+loadConversations();
+applySavedTheme();
+renderHistory();
+renderConversation();
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("/service-worker.js").then(r=>console.log("Service worker activé :",r.scope)).catch(e=>console.error("Erreur du service worker :",e))})}</script>
 </body>
