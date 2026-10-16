@@ -1,0 +1,2174 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta name="theme-color" content="#101827">
+  <meta name="description" content="IsidoreAI-2, votre assistant intelligent pour apprendre, comprendre, créer et modifier des images.">
+
+  <title>IsidoreAI-2</title>
+
+  <style>
+    :root {
+      --background: #f5f7fb;
+      --surface: #ffffff;
+      --surface-secondary: #eef2f7;
+      --text: #172033;
+      --muted: #697586;
+      --border: #dce3ed;
+      --primary: #2864dc;
+      --primary-hover: #174db5;
+      --user-message: #e6efff;
+      --assistant-message: #ffffff;
+      --danger: #c62828;
+      --shadow: 0 4px 20px rgba(15, 23, 42, 0.07);
+    }
+
+    body.dark {
+      --background: #101827;
+      --surface: #182235;
+      --surface-secondary: #202d43;
+      --text: #edf2fa;
+      --muted: #a7b3c6;
+      --border: #344158;
+      --primary: #6191ff;
+      --primary-hover: #80a7ff;
+      --user-message: #243b61;
+      --assistant-message: #182235;
+      --danger: #ff8585;
+      --shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background: var(--background);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      min-height: 100vh;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    .app {
+      min-height: 100vh;
+    }
+
+    .topbar {
+      height: 64px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .topbar-left,
+    .topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 19px;
+      font-weight: 700;
+    }
+
+    .brand-icon {
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      color: white;
+      background: var(--primary);
+      font-size: 21px;
+    }
+
+    .icon-button {
+      border: 1px solid var(--border);
+      color: var(--text);
+      background: var(--surface);
+      border-radius: 10px;
+      min-width: 40px;
+      min-height: 40px;
+      padding: 8px;
+    }
+
+    .icon-button:hover {
+      background: var(--surface-secondary);
+    }
+
+    .layout {
+      display: flex;
+      min-height: calc(100vh - 64px);
+    }
+
+    .sidebar {
+      width: 280px;
+      flex-shrink: 0;
+      padding: 18px 12px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .sidebar-button {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      text-align: left;
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    .sidebar-button:hover {
+      background: var(--surface-secondary);
+    }
+
+    .sidebar-section-title {
+      margin: 15px 8px 5px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.7px;
+    }
+
+    .history-search {
+      width: 100%;
+      padding: 11px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--background);
+      color: var(--text);
+      outline: none;
+    }
+
+    .history-list {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      overflow-y: auto;
+      max-height: 48vh;
+    }
+
+    .history-item {
+      width: 100%;
+      padding: 11px;
+      border: 0;
+      border-radius: 9px;
+      background: transparent;
+      color: var(--text);
+      text-align: left;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .history-item:hover,
+    .history-item.active {
+      background: var(--surface-secondary);
+    }
+
+    .history-empty {
+      padding: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      display: grid;
+      gap: 8px;
+    }
+
+    .main {
+      min-width: 0;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .conversation {
+      width: 100%;
+      max-width: 900px;
+      padding: 28px 22px 190px;
+    }
+
+    .welcome {
+      min-height: 48vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 25px;
+    }
+
+    .welcome-icon {
+      width: 78px;
+      height: 78px;
+      display: grid;
+      place-items: center;
+      border-radius: 25px;
+      background: var(--primary);
+      color: white;
+      font-size: 38px;
+      margin-bottom: 20px;
+    }
+
+    .welcome h1 {
+      margin: 0 0 12px;
+      font-size: clamp(26px, 4vw, 38px);
+    }
+
+    .welcome p {
+      max-width: 570px;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+
+    .suggestions {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .suggestion {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: 11px 14px;
+      border-radius: 14px;
+    }
+
+    .suggestion:hover {
+      border-color: var(--primary);
+    }
+
+    .user-block,
+    .ai-block {
+      margin-bottom: 28px;
+      min-width: 0;
+    }
+
+    .user-name,
+    .ai-name {
+      margin-bottom: 9px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .user-message {
+      display: inline-block;
+      max-width: 100%;
+      background: var(--user-message);
+      padding: 13px 16px;
+      border-radius: 16px;
+      line-height: 1.65;
+      overflow-wrap: anywhere;
+    }
+
+    .ai-answer {
+      background: var(--assistant-message);
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      padding: 17px;
+      line-height: 1.75;
+      overflow-wrap: anywhere;
+      box-shadow: var(--shadow);
+    }
+
+    .ai-answer h1,
+    .ai-answer h2,
+    .ai-answer h3 {
+      line-height: 1.35;
+    }
+
+    .ai-answer pre {
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .message-image {
+      display: block;
+      max-width: min(100%, 450px);
+      max-height: 450px;
+      object-fit: contain;
+      margin-top: 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .generated-image {
+      display: block;
+      width: auto;
+      max-width: 100%;
+      max-height: 700px;
+      object-fit: contain;
+      border-radius: 12px;
+      margin: 15px 0;
+    }
+
+    .image-download-link {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 10px 14px;
+      background: var(--primary);
+      color: #fff;
+      text-decoration: none;
+      border-radius: 9px;
+    }
+
+    .image-download-link:hover {
+      background: var(--primary-hover);
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 0;
+    }
+
+    .loading span {
+      width: 8px;
+      height: 8px;
+      background: var(--primary);
+      border-radius: 50%;
+      animation: pulse 1s infinite ease-in-out;
+    }
+
+    .loading span:nth-child(2) {
+      animation-delay: 0.15s;
+    }
+
+    .loading span:nth-child(3) {
+      animation-delay: 0.3s;
+    }
+
+    @keyframes pulse {
+      0%, 80%, 100% {
+        opacity: 0.3;
+        transform: translateY(0);
+      }
+
+      40% {
+        opacity: 1;
+        transform: translateY(-5px);
+      }
+    }
+
+    .composer-area {
+      position: fixed;
+      z-index: 15;
+      bottom: 0;
+      left: 280px;
+      right: 0;
+      padding: 18px 22px 12px;
+      background: linear-gradient(
+        to top,
+        var(--background) 80%,
+        transparent
+      );
+      display: flex;
+      justify-content: center;
+    }
+
+    .composer-inner {
+      width: 100%;
+      max-width: 850px;
+    }
+
+    .image-preview-row {
+      display: none;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+
+    .image-preview-row.visible {
+      display: flex;
+    }
+
+    .image-preview-thumb {
+      width: 58px;
+      height: 58px;
+      border-radius: 8px;
+      object-fit: cover;
+    }
+
+    .image-preview-label {
+      flex: 1;
+      min-width: 0;
+      overflow-wrap: anywhere;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .composer {
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 19px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    .composer textarea {
+      display: block;
+      width: 100%;
+      min-height: 48px;
+      max-height: 180px;
+      resize: none;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      line-height: 1.6;
+      padding: 8px;
+    }
+
+    .composer-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .composer-actions button {
+      min-height: 38px;
+      border-radius: 10px;
+      padding: 8px 11px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    .composer-actions button:hover {
+      background: var(--surface-secondary);
+    }
+
+    .composer-actions .send-button {
+      margin-left: auto;
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+      font-weight: 700;
+      min-width: 85px;
+    }
+
+    .composer-actions .send-button:hover {
+      background: var(--primary-hover);
+    }
+
+    .composer-actions .active {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--surface-secondary);
+    }
+
+    .image-mode-hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin: 9px 5px 2px;
+    }
+
+    .composer-disclaimer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 9px;
+    }
+
+    .scrim {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      background: rgba(0, 0, 0, 0.48);
+      display: none;
+    }
+
+    .scrim.open {
+      display: block;
+    }
+
+    .dialog {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 50;
+      width: min(92vw, 460px);
+      max-height: 85vh;
+      overflow-y: auto;
+      display: none;
+      padding: 22px;
+      border-radius: 18px;
+      background: var(--surface);
+      color: var(--text);
+      box-shadow: var(--shadow);
+    }
+
+    .dialog.open {
+      display: block;
+    }
+
+    .dialog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .dialog-header h2 {
+      font-size: 20px;
+      margin: 0;
+    }
+
+    .dialog p {
+      line-height: 1.7;
+      color: var(--muted);
+    }
+
+    .setting-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .danger-button {
+      color: var(--danger) !important;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .search-image-grid {
+      display: grid;
+      grid-template-columns: repeat(
+        auto-fit,
+        minmax(140px, 1fr)
+      );
+      gap: 12px;
+      margin-top: 15px;
+    }
+
+    .search-image-card {
+      padding: 8px;
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+    }
+
+    .search-image-card img {
+      width: 100%;
+      height: 145px;
+      object-fit: contain;
+      border-radius: 8px;
+      background: var(--surface-secondary);
+    }
+
+    .search-image-card p {
+      font-size: 13px;
+      overflow-wrap: anywhere;
+    }
+
+    .search-image-card a {
+      color: var(--primary);
+      font-size: 13px;
+    }
+
+    @media (max-width: 800px) {
+      .sidebar {
+        position: fixed;
+        top: 64px;
+        bottom: 0;
+        left: 0;
+        z-index: 45;
+        width: min(85vw, 310px);
+        transform: translateX(-105%);
+        transition: transform 0.2s ease;
+        box-shadow: var(--shadow);
+      }
+
+      .sidebar.open {
+        transform: translateX(0);
+      }
+
+      .composer-area {
+        left: 0;
+        padding: 12px 10px 8px;
+      }
+
+      .conversation {
+        padding: 20px 13px 190px;
+      }
+
+      .brand {
+        font-size: 16px;
+      }
+
+      .composer-actions button {
+        font-size: 12px;
+        padding: 8px;
+      }
+
+      .welcome {
+        min-height: 43vh;
+        padding: 15px 5px;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .topbar {
+        padding: 0 9px;
+      }
+
+      .topbar-right {
+        gap: 5px;
+      }
+
+      .brand-icon {
+        width: 33px;
+        height: 33px;
+      }
+
+      .composer-actions {
+        gap: 5px;
+      }
+
+      .composer-actions button {
+        min-height: 35px;
+        font-size: 11px;
+      }
+
+      .suggestion {
+        font-size: 12px;
+      }
+    }
+  </style>
+
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      },
+      options: {
+        skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code']
+      }
+    };
+  </script>
+
+  <script
+    defer
+    src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+  </script>
+</head>
+
+<body>
+  <div class="app">
+
+    <header class="topbar">
+      <div class="topbar-left">
+        <button
+          type="button"
+          id="menuButton"
+          class="icon-button"
+          aria-label="Ouvrir le menu"
+          aria-expanded="false">
+          ☰
+        </button>
+
+        <div class="brand">
+          <span class="brand-icon">✦</span>
+          <span>IsidoreAI-2</span>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <button
+          type="button"
+          id="topNewChat"
+          class="icon-button"
+          title="Nouvelle conversation"
+          aria-label="Nouvelle conversation">
+          ＋
+        </button>
+      </div>
+    </header>
+
+    <div class="layout">
+
+      <aside class="sidebar" id="sidebar">
+        <button
+          type="button"
+          id="newChatButton"
+          class="sidebar-button">
+          ＋ Nouvelle conversation
+        </button>
+
+        <button
+          type="button"
+          id="searchHistoryButton"
+          class="sidebar-button">
+          ⌕ Rechercher une conversation
+        </button>
+
+        <div class="sidebar-section-title">
+          Historique
+        </div>
+
+        <input
+          type="search"
+          id="historySearch"
+          class="history-search"
+          placeholder="Rechercher..."
+          aria-label="Rechercher dans l'historique">
+
+        <div id="historyList" class="history-list"></div>
+
+        <div class="sidebar-footer">
+          <button
+            type="button"
+            id="settingsButton"
+            class="sidebar-button">
+            ⚙ Paramètres
+          </button>
+
+          <button
+            type="button"
+            id="aboutButton"
+            class="sidebar-button">
+            ⓘ À propos
+          </button>
+        </div>
+      </aside>
+
+      <div id="menuScrim" class="scrim"></div>
+
+      <main class="main">
+        <section
+          id="conversation"
+          class="conversation"
+          aria-live="polite">
+
+          <div id="welcome" class="welcome">
+            <div class="welcome-icon">✦</div>
+
+            <h1>Bienvenue sur IsidoreAI-2</h1>
+
+            <p>
+              Posez vos questions, envoyez une photo,
+              demandez une explication ou créez une image.
+              IsidoreAI vous accompagne dans vos études,
+              votre travail et vos projets.
+            </p>
+
+            <div class="suggestions">
+              <button
+                type="button"
+                class="suggestion"
+                data-prompt="Explique-moi la différence entre la masse et le poids.">
+                📚 Apprendre
+              </button>
+
+              <button
+                type="button"
+                class="suggestion"
+                data-prompt="Crée une image d'une belle maison moderne.">
+                🎨 Créer une image
+              </button>
+
+              <button
+                type="button"
+                class="suggestion"
+                data-prompt="Montre-moi des photographies de la cathédrale de Lubumbashi.">
+                🌍 Voir un lieu réel
+              </button>
+
+              <button
+                type="button"
+                class="suggestion"
+                data-prompt="Explique-moi ce qu'on voit sur cette photo."
+                data-attach="true">
+                🖼 Analyser une photo
+              </button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <section class="composer-area">
+      <div class="composer-inner">
+
+        <div id="imagePreviewRow" class="image-preview-row">
+          <img
+            id="imagePreviewThumb"
+            class="image-preview-thumb"
+            alt="Aperçu de la photo sélectionnée">
+
+          <div
+            id="imagePreviewLabel"
+            class="image-preview-label">
+            Image sélectionnée
+          </div>
+
+          <button
+            type="button"
+            id="removeImageButton"
+            class="icon-button"
+            aria-label="Retirer la photo">
+            ✕
+          </button>
+        </div>
+
+        <div class="composer">
+          <textarea
+            id="question"
+            rows="1"
+            placeholder="Posez votre question à IsidoreAI..."
+            aria-label="Votre message"></textarea>
+
+          <input
+            type="file"
+            id="imageInput"
+            accept="image/jpeg,image/png,image/webp"
+            hidden>
+
+          <div class="composer-actions">
+
+            <button
+              type="button"
+              id="attachButton"
+              title="Joindre une photo">
+              📎 Photo
+            </button>
+
+            <button
+              type="button"
+              id="voiceButton"
+              title="Dicter un message">
+              🎙 Dictée
+            </button>
+
+            <button
+              type="button"
+              id="imageModeButton"
+              aria-pressed="false"
+              title="Activer ou désactiver le mode image">
+              🎨 Générer une image
+            </button>
+
+            <button
+              type="button"
+              id="newImageButton"
+              hidden>
+              Nouvelle image
+            </button>
+
+            <button
+              type="button"
+              id="sendButton"
+              class="send-button">
+              Envoyer ➤
+            </button>
+          </div>
+        </div>
+
+        <div
+          id="imageModeHint"
+          class="image-mode-hint">
+          Détection automatique activée
+        </div>
+
+        <div class="composer-disclaimer">
+          IsidoreAI peut faire des erreurs. Vérifiez les informations importantes.
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <div id="settingsScrim" class="scrim"></div>
+
+  <section
+    id="settingsDialog"
+    class="dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="settingsTitle">
+
+    <div class="dialog-header">
+      <h2 id="settingsTitle">Paramètres</h2>
+
+      <button
+        type="button"
+        id="closeSettings"
+        class="icon-button"
+        aria-label="Fermer">
+        ✕
+      </button>
+    </div>
+
+    <div class="setting-row">
+      <span>Thème sombre</span>
+
+      <button
+        type="button"
+        id="themeToggle"
+        class="icon-button">
+        Activer
+      </button>
+    </div>
+
+    <div class="setting-row">
+      <span>Historique des conversations</span>
+
+      <button
+        type="button"
+        id="clearHistoryButton"
+        class="icon-button danger-button">
+        Effacer
+      </button>
+    </div>
+
+    <p>
+      Les conversations sont enregistrées localement
+      dans le navigateur de cet appareil.
+    </p>
+  </section>
+
+  <div id="aboutScrim" class="scrim"></div>
+
+  <section
+    id="aboutDialog"
+    class="dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="aboutTitle">
+
+    <div class="dialog-header">
+      <h2 id="aboutTitle">À propos d'IsidoreAI-2</h2>
+
+      <button
+        type="button"
+        id="closeAbout"
+        class="icon-button"
+        aria-label="Fermer">
+        ✕
+      </button>
+    </div>
+
+    <p>
+      IsidoreAI-2 est un assistant intelligent conçu pour
+      répondre aux questions, analyser les images, rechercher
+      des photographies et aider à la création de contenus.
+    </p>
+
+    <p>
+      Les fonctionnalités d'intelligence artificielle
+      dépendent des services configurés sur le serveur.
+    </p>
+  </section>
+
+  <script>
+    "use strict";
+
+    const $ = id => document.getElementById(id);
+
+    const zone = $("question");
+    const conversation = $("conversation");
+    const welcome = $("welcome");
+    const sendButton = $("sendButton");
+    const attachButton = $("attachButton");
+    const voiceButton = $("voiceButton");
+    const imageInput = $("imageInput");
+
+    const imagePreviewRow = $("imagePreviewRow");
+    const imagePreviewThumb = $("imagePreviewThumb");
+    const imagePreviewLabel = $("imagePreviewLabel");
+
+    const STORAGE_KEY = "isidoreai2_conversations_v1";
+    const ACTIVE_KEY = "isidoreai2_active_v1";
+    const THEME_KEY = "isidoreai2_theme_v1";
+
+    const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+
+    let conversations = [];
+    let activeConversationId = null;
+    let selectedImage = null;
+    let sending = false;
+    let recognition = null;
+    let listening = false;
+
+    function makeId() {
+      return Date.now().toString(36) +
+        Math.random().toString(36).slice(2, 8);
+    }
+
+    function normalizeText(text) {
+      return String(text || "")
+        .toLocaleLowerCase("fr")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+    }
+
+    function loadHistory() {
+      try {
+        const saved = JSON.parse(
+          localStorage.getItem(STORAGE_KEY) || "[]"
+        );
+
+        conversations = Array.isArray(saved) ? saved : [];
+      } catch {
+        conversations = [];
+      }
+
+      activeConversationId =
+        localStorage.getItem(ACTIVE_KEY);
+
+      if (!getActiveConversation()) {
+        activeConversationId = null;
+      }
+    }
+
+    function saveHistory() {
+      try {
+        localStorage.setItem(
+          STORAGE_KEY,
+          JSON.stringify(conversations)
+        );
+
+        if (activeConversationId) {
+          localStorage.setItem(
+            ACTIVE_KEY,
+            activeConversationId
+          );
+        } else {
+          localStorage.removeItem(ACTIVE_KEY);
+        }
+      } catch (error) {
+        console.warn("Enregistrement impossible :", error);
+      }
+
+      renderHistory();
+    }
+
+    function getActiveConversation() {
+      return conversations.find(
+        item => item.id === activeConversationId
+      ) || null;
+    }
+
+    function ensureConversation(title) {
+      let item = getActiveConversation();
+
+      if (!item) {
+        item = {
+          id: makeId(),
+          title: String(title || "Nouvelle conversation")
+            .slice(0, 65),
+          updatedAt: Date.now(),
+          messages: []
+        };
+
+        conversations.unshift(item);
+        activeConversationId = item.id;
+      }
+
+      item.updatedAt = Date.now();
+
+      return item;
+    }
+
+    function renderHistory() {
+      const list = $("historyList");
+      const search = $("historySearch").value
+        .trim()
+        .toLocaleLowerCase("fr");
+
+      list.replaceChildren();
+
+      const items = [...conversations]
+        .sort((a, b) => b.updatedAt - a.updatedAt)
+        .filter(item => {
+          const content = [
+            item.title,
+            ...item.messages.map(m => m.text || "")
+          ].join(" ").toLocaleLowerCase("fr");
+
+          return content.includes(search);
+        });
+
+      if (!items.length) {
+        const empty = document.createElement("div");
+        empty.className = "history-empty";
+        empty.textContent = "Aucune conversation.";
+        list.appendChild(empty);
+        return;
+      }
+
+      for (const item of items) {
+        const button = document.createElement("button");
+
+        button.type = "button";
+        button.className = "history-item";
+
+        if (item.id === activeConversationId) {
+          button.classList.add("active");
+        }
+
+        button.textContent = item.title || "Conversation";
+
+        button.addEventListener("click", () => {
+          activeConversationId = item.id;
+          saveHistory();
+          renderConversation();
+          closeMenu();
+        });
+
+        list.appendChild(button);
+      }
+    }
+
+    function escapeHTML(text) {
+      return String(text ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function formatText(text) {
+      let html = escapeHTML(text);
+
+      html = html.replace(
+        /^### (.*)$/gm,
+        "<h3>$1</h3>"
+      );
+
+      html = html.replace(
+        /^## (.*)$/gm,
+        "<h2>$1</h2>"
+      );
+
+      html = html.replace(
+        /^# (.*)$/gm,
+        "<h1>$1</h1>"
+      );
+
+      html = html.replace(
+        /\*\*(.*?)\*\*/g,
+        "<strong>$1</strong>"
+      );
+
+      html = html.replace(
+        /`([^`]+)`/g,
+        "<code>$1</code>"
+      );
+
+      html = html.replace(/\n/g, "<br>");
+
+      return html;
+    }
+
+    function appendUserMessage(text, imageDataUrl) {
+      const block = document.createElement("article");
+      block.className = "user-block";
+
+      const label = document.createElement("div");
+      label.className = "user-name";
+      label.textContent = "Vous";
+
+      const content = document.createElement("div");
+      content.className = "user-message";
+      content.textContent = text || "Photo envoyée.";
+
+      if (imageDataUrl) {
+        const image = document.createElement("img");
+
+        image.className = "message-image";
+        image.src = imageDataUrl;
+        image.alt = "Photo envoyée";
+
+        content.appendChild(document.createElement("br"));
+        content.appendChild(image);
+      }
+
+      block.append(label, content);
+      conversation.appendChild(block);
+    }
+
+    function appendAssistantMessage(text, error = false) {
+      const block = document.createElement("article");
+      block.className = "ai-block";
+
+      const label = document.createElement("div");
+      label.className = "ai-name";
+      label.textContent = "IsidoreAI";
+
+      const content = document.createElement("div");
+      content.className = "ai-answer";
+
+      if (error) {
+        content.textContent = "⚠️ " + text;
+      } else {
+        content.innerHTML = formatText(text);
+      }
+
+      block.append(label, content);
+      conversation.appendChild(block);
+
+      if (!error && window.MathJax?.typesetPromise) {
+        window.MathJax.typesetPromise([content]).catch(() => {});
+      }
+
+      return content;
+    }
+
+    function appendImageToAnswer(answer, imageData, mimeType) {
+      const imageUrl =
+        "data:" + mimeType + ";base64," + imageData;
+
+      const image = document.createElement("img");
+
+      image.className = "generated-image";
+      image.src = imageUrl;
+      image.alt = "Image générée ou modifiée par IsidoreAI";
+
+      answer.appendChild(image);
+
+      const link = document.createElement("a");
+
+      link.className = "image-download-link";
+      link.href = imageUrl;
+      link.download = "isidoreai-image.png";
+      link.textContent = "⬇ Télécharger l'image";
+
+      answer.appendChild(link);
+
+      return imageUrl;
+    }
+
+    function renderConversation() {
+      conversation.replaceChildren();
+
+      const item = getActiveConversation();
+
+      if (!item || !item.messages.length) {
+        conversation.appendChild(welcome);
+        welcome.style.display = "flex";
+        return;
+      }
+
+      welcome.style.display = "none";
+
+      for (const message of item.messages) {
+        if (message.role === "user") {
+          appendUserMessage(
+            message.text,
+            message.imageDataUrl
+          );
+        } else {
+          const answer = appendAssistantMessage(
+            message.text,
+            message.error
+          );
+
+          if (message.imageData) {
+            appendImageToAnswer(
+              answer,
+              message.imageData,
+              message.mimeType || "image/png"
+            );
+          }
+
+          if (message.searchResults) {
+            renderSearchResults(
+              answer,
+              message.searchResults
+            );
+          }
+        }
+      }
+
+      scrollToBottom();
+    }
+
+    function scrollToBottom() {
+      window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: "smooth"
+      });
+    }
+
+    function openDialog(id) {
+      $(id).classList.add("open");
+    }
+
+    function closeDialog(id) {
+      $(id).classList.remove("open");
+    }
+
+    function openMenu() {
+      $("sidebar").classList.add("open");
+      $("menuScrim").classList.add("open");
+    }
+
+    function closeMenu() {
+      $("sidebar").classList.remove("open");
+      $("menuScrim").classList.remove("open");
+    }
+
+    function newConversation() {
+      if (sending) return;
+
+      activeConversationId = null;
+
+      saveHistory();
+      renderConversation();
+
+      zone.value = "";
+      resizeTextarea();
+      removeSelectedImage();
+
+      zone.focus();
+    }
+
+    $("menuButton").addEventListener("click", openMenu);
+
+    $("closeMenu").addEventListener("click", closeMenu);
+
+    $("menuScrim").addEventListener("click", closeMenu);
+
+    $("newChatButton").addEventListener(
+      "click",
+      newConversation
+    );
+
+    $("topNewChat").addEventListener(
+      "click",
+      newConversation
+    );
+
+    $("searchHistoryButton").addEventListener(
+      "click",
+      () => $("historySearch").focus()
+    );
+
+    $("historySearch").addEventListener(
+      "input",
+      renderHistory
+    );
+
+    $("settingsButton").addEventListener(
+      "click",
+      () => {
+        closeMenu();
+        openDialog("settingsScrim");
+      }
+    );
+
+    $("aboutButton").addEventListener(
+      "click",
+      () => {
+        closeMenu();
+        openDialog("aboutScrim");
+      }
+    );
+
+    $("closeSettings").addEventListener(
+      "click",
+      () => closeDialog("settingsScrim")
+    );
+
+    $("closeAbout").addEventListener(
+      "click",
+      () => closeDialog("aboutScrim")
+    );
+
+    $("settingsScrim").addEventListener("click", event => {
+      if (event.target.id === "settingsScrim") {
+        closeDialog("settingsScrim");
+      }
+    });
+
+    $("aboutScrim").addEventListener("click", event => {
+      if (event.target.id === "aboutScrim") {
+        closeDialog("aboutScrim");
+      }
+    });
+
+    function updateThemeLabel() {
+      $("themeToggle").textContent =
+        document.body.classList.contains("dark")
+          ? "Désactiver"
+          : "Activer";
+    }
+
+    $("themeToggle").addEventListener("click", () => {
+      document.body.classList.toggle("dark");
+
+      localStorage.setItem(
+        THEME_KEY,
+        document.body.classList.contains("dark")
+          ? "dark"
+          : "light"
+      );
+
+      updateThemeLabel();
+    });
+
+    $("clearHistoryButton").addEventListener(
+      "click",
+      () => {
+        if (
+          !confirm(
+            "Voulez-vous effacer toutes les conversations enregistrées ?"
+          )
+        ) {
+          return;
+        }
+
+        conversations = [];
+        activeConversationId = null;
+
+        saveHistory();
+        renderConversation();
+
+        closeDialog("settingsScrim");
+      }
+    );
+
+    /* Gestion des images envoyées */
+
+    function removeSelectedImage() {
+      selectedImage = null;
+
+      imagePreviewThumb.removeAttribute("src");
+      imagePreviewRow.classList.remove("visible");
+      imageInput.value = "";
+    }
+
+    $("removeImageButton").addEventListener(
+      "click",
+      removeSelectedImage
+    );
+
+    attachButton.addEventListener("click", () => {
+      if (!sending) imageInput.click();
+    });
+
+    function fileToDataURL(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function optimizeImage(file) {
+      return new Promise(async (resolve, reject) => {
+        try {
+          const dataUrl = await fileToDataURL(file);
+          const image = new Image();
+
+          image.onload = () => {
+            const maxDimension = 1280;
+
+            const ratio = Math.min(
+              1,
+              maxDimension /
+                Math.max(image.width, image.height)
+            );
+
+            const canvas = document.createElement("canvas");
+
+            canvas.width = Math.max(
+              1,
+              Math.round(image.width * ratio)
+            );
+
+            canvas.height = Math.max(
+              1,
+              Math.round(image.height * ratio)
+            );
+
+            const context = canvas.getContext("2d");
+
+            context.drawImage(
+              image,
+              0,
+              0,
+              canvas.width,
+              canvas.height
+            );
+
+            resolve(
+              canvas.toDataURL("image/jpeg", 0.82)
+            );
+          };
+
+          image.onerror = reject;
+          image.src = dataUrl;
+        } catch (error) {
+          reject(error);
+        }
+      });
+    }
+
+    imageInput.addEventListener("change", async () => {
+      const file = imageInput.files?.[0];
+
+      if (!file) return;
+
+      if (
+        !["image/jpeg", "image/png", "image/webp"]
+          .includes(file.type)
+      ) {
+        alert("Formats autorisés : JPG, PNG et WEBP.");
+        imageInput.value = "";
+        return;
+      }
+
+      if (file.size > MAX_IMAGE_SIZE) {
+        alert(
+          "La photo dépasse 5 Mo. Choisissez une image plus légère."
+        );
+
+        imageInput.value = "";
+        return;
+      }
+
+      try {
+        const dataUrl = await optimizeImage(file);
+
+        selectedImage = {
+          dataUrl,
+          mimeType: dataUrl.slice(5, dataUrl.indexOf(";")),
+          name: file.name
+        };
+
+        imagePreviewThumb.src = dataUrl;
+        imagePreviewLabel.textContent = file.name;
+        imagePreviewRow.classList.add("visible");
+
+        zone.focus();
+      } catch {
+        alert("Impossible de charger cette image.");
+      }
+
+      imageInput.value = "";
+    });
+
+    /* Détection automatique de l'intention */
+
+    let imageMode = false;
+    let lastGeneratedImage = null;
+
+    function setImageMode(enabled) {
+      imageMode = enabled;
+
+      $("imageModeButton").classList.toggle(
+        "active",
+        enabled
+      );
+
+      $("imageModeButton").setAttribute(
+        "aria-pressed",
+        String(enabled)
+      );
+
+      $("imageModeButton").textContent = enabled
+        ? "🎨 Mode image activé"
+        : "🎨 Générer une image";
+
+      $("imageModeHint").textContent = enabled
+        ? "Décrivez l'image à créer ou à modifier."
+        : "Détection automatique activée";
+
+      $("newImageButton").hidden =
+        !(enabled && lastGeneratedImage);
+
+      zone.placeholder = enabled
+        ? "Décrivez l'image à créer ou à modifier..."
+        : "Posez votre question à IsidoreAI...";
+    }
+
+    $("imageModeButton").addEventListener(
+      "click",
+      () => setImageMode(!imageMode)
+    );
+
+    $("newImageButton").addEventListener(
+      "click",
+      () => {
+        lastGeneratedImage = null;
+        setImageMode(true);
+        zone.focus();
+      }
+    );
+
+    function detectIntent(question, hasImage) {
+      const q = normalizeText(question);
+
+      const editVerb =
+        /\b(supprime|retire|enleve|change|remplace|modifie|transforme|ameliore|ajoute|recadre|restaure)\b/;
+
+      const imageObject =
+        /\b(photo|image|arriere.plan|fond|objet|vetement|couleur|dessin|cartoon|plage|qualite|style)\b/;
+
+      const creationVerb =
+        /\b(cree|genere|dessine|imagine|illustre|fabrique)\b/;
+
+      const imageType =
+        /\b(image|illustration|dessin|logo|portrait|maison|paysage|affiche|personnage|voiture|robe|batiment)\b/;
+
+      const realPhotoVerb =
+        /\b(montre|affiche|trouve|recherche|cherche)\b/;
+
+      const realPlace =
+        /\b(cathedrale|eglise|monument|lubumbashi|kinshasa|goma|matadi|parc|musee|montagne|plage|ville|batiment|paysage|lac|chute)\b/;
+
+      if (hasImage && editVerb.test(q)) {
+        return "edit";
+      }
+
+      if (
+        !hasImage &&
+        realPhotoVerb.test(q) &&
+        realPlace.test(q)
+      ) {
+        return "search";
+      }
+
+      if (
+        creationVerb.test(q) &&
+        (imageType.test(q) || imageMode)
+      ) {
+        return "image";
+      }
+
+      if (imageMode) {
+        return "image";
+      }
+
+      return "chat";
+    }
+
+    /* Communication avec le serveur */
+
+    async function postJSON(endpoint, payload) {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Le serveur a rencontré une erreur."
+        );
+      }
+
+      return data;
+    }
+
+    function imagePayload(image) {
+      if (!image) return null;
+
+      const comma = image.dataUrl.indexOf(",");
+
+      return {
+        mimeType: image.mimeType,
+        data: image.dataUrl.slice(comma + 1)
+      };
+    }
+
+    function renderSearchResults(container, results) {
+      const grid = document.createElement("div");
+      grid.className = "search-image-grid";
+
+      for (const result of results || []) {
+        const card = document.createElement("article");
+        card.className = "search-image-card";
+
+        const image = document.createElement("img");
+
+        image.src =
+          result.thumbnailUrl || result.imageUrl;
+
+        image.alt = result.title || "Photographie";
+        image.loading = "lazy";
+
+        const title = document.createElement("p");
+        title.textContent = result.title || "Photographie";
+
+        const link = document.createElement("a");
+
+        link.href = result.sourceUrl || result.imageUrl;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = "Voir la source";
+
+        card.append(image, title, link);
+        grid.appendChild(card);
+      }
+
+      container.appendChild(grid);
+    }
+
+    async function envoyer() {
+      const question = zone.value.trim();
+
+      if ((!question && !selectedImage) || sending) {
+        return;
+      }
+
+      const attachedImage = selectedImage
+        ? { ...selectedImage }
+        : null;
+
+      const intent = detectIntent(
+        question,
+        !!attachedImage
+      );
+
+      const displayText = question ||
+        "Analyse cette image et explique ce qu'elle montre.";
+
+      const current = ensureConversation(
+        question || "Photo envoyée"
+      );
+
+      /*
+       * La photo est affichée et enregistrée localement
+       * avant toute requête réseau.
+       */
+
+      appendUserMessage(
+        displayText,
+        attachedImage?.dataUrl || null
+      );
+
+      current.messages.push({
+        role: "user",
+        text: displayText,
+        imageDataUrl: attachedImage?.dataUrl || null,
+        time: Date.now()
+      });
+
+      current.updatedAt = Date.now();
+
+      saveHistory();
+
+      welcome.style.display = "none";
+
+      zone.value = "";
+      resizeTextarea();
+
+      removeSelectedImage();
+
+      sending = true;
+
+      zone.disabled = true;
+      sendButton.disabled = true;
+      attachButton.disabled = true;
+      voiceButton.disabled = true;
+      $("imageModeButton").disabled = true;
+
+      const answer = appendAssistantMessage("");
+
+      answer.innerHTML =
+        '<div class="loading"><span></span><span></span><span></span></div>';
+
+      scrollToBottom();
+
+      let assistantText = "";
+      let imageResult = null;
+      let searchResults = null;
+
+      try {
+        if (intent === "search") {
+          const result = await postJSON(
+            "/api/search-images",
+            { query: question }
+          );
+
+          searchResults = result.images || [];
+
+          answer.replaceChildren();
+
+          if (searchResults.length) {
+            const heading = document.createElement("p");
+
+            heading.textContent =
+              "Photographies correspondant à votre recherche : " +
+              question;
+
+            answer.appendChild(heading);
+
+            renderSearchResults(answer, searchResults);
+
+            assistantText =
+              "Photographies trouvées pour : " + question;
+          } else {
+            assistantText =
+              "Aucune photographie n'a été trouvée.";
+
+            answer.textContent = assistantText;
+          }
+        } else if (
+          intent === "image" ||
+          intent === "edit"
+        ) {
+          const referenceImage =
+            !attachedImage && lastGeneratedImage
+              ? lastGeneratedImage
+              : null;
+
+          const result = await postJSON(
+            "/api/generate-image",
+            {
+              prompt: question ||
+                "Améliore cette photo en conservant son sujet.",
+
+              image: imagePayload(attachedImage),
+
+              referenceImage
+            }
+          );
+
+          if (!result.image?.data) {
+            throw new Error(
+              "Le service n'a renvoyé aucune image."
+            );
+          }
+
+          imageResult = {
+            data: result.image.data,
+            mimeType: result.image.mimeType || "image/png"
+          };
+
+          lastGeneratedImage = imageResult;
+
+          answer.replaceChildren();
+
+          if (result.text) {
+            const description = document.createElement("p");
+
+            description.textContent = result.text;
+
+            answer.appendChild(description);
+          }
+
+          appendImageToAnswer(
+            answer,
+            imageResult.data,
+            imageResult.mimeType
+          );
+
+          assistantText =
+            result.text || "Image créée avec succès.";
+        } else {
+          const currentHistory = current.messages
+            .filter(message =>
+              message.role === "user" ||
+              message.role === "assistant"
+            )
+            .slice(0, -1)
+            .slice(-16)
+            .map(message => ({
+              role: message.role,
+              text: message.text || ""
+            }));
+
+          const result = await postJSON(
+            "/api/solve",
+            {
+              problem: question ||
+                "Analyse cette image et explique ce qu'elle montre.",
+
+              image: imagePayload(attachedImage),
+
+              history: currentHistory
+            }
+          );
+
+          assistantText =
+            typeof result.answer === "string"
+              ? result.answer
+              : "Aucune réponse reçue.";
+
+          answer.innerHTML = formatText(assistantText);
+
+          if (window.MathJax?.typesetPromise) {
+            window.MathJax.typesetPromise([answer]).catch(() => {});
+          }
+        }
+
+        current.messages.push({
+          role: "assistant",
+          text: assistantText,
+          imageData: imageResult?.data || null,
+          mimeType: imageResult?.mimeType || null,
+          searchResults,
+          time: Date.now()
+        });
+
+        current.updatedAt = Date.now();
+
+        saveHistory();
+
+      } catch (error) {
+        assistantText =
+          error?.message ||
+          "Une erreur inconnue s'est produite.";
+
+        answer.replaceChildren();
+
+        const errorParagraph = document.createElement("p");
+
+        errorParagraph.textContent = "⚠️ " + assistantText;
+
+        answer.appendChild(errorParagraph);
+
+        current.messages.push({
+          role: "assistant",
+          text: assistantText,
+          error: true,
+          time: Date.now()
+        });
+
+        current.updatedAt = Date.now();
+
+        saveHistory();
+
+        console.error("Erreur IsidoreAI :", error);
+      } finally {
+        sending = false;
+
+        zone.disabled = false;
+        sendButton.disabled = false;
+        attachButton.disabled = false;
+        voiceButton.disabled = false;
+        $("imageModeButton").disabled = false;
+
+        resizeTextarea();
+        zone.focus();
+        scrollToBottom();
+      }
+    }
+
+    sendButton.addEventListener("click", envoyer);
+
+    zone.addEventListener("keydown", event => {
+      if (
+        event.key === "Enter" &&
+        !event.shiftKey &&
+        !event.isComposing
+      ) {
+        event.preventDefault();
+        envoyer();
+      }
+    });
+
+    function resizeTextarea() {
+      zone.style.height = "auto";
+
+      zone.style.height =
+        Math.min(zone.scrollHeight, 180) + "px";
+    }
+
+    zone.addEventListener("input", resizeTextarea);
+
+    /* Suggestions sur la page d'accueil */
+
+    document.querySelectorAll("[data-prompt]")
+      .forEach(button => {
+        button.addEventListener("click", () => {
+          zone.value = button.dataset.prompt || "";
+
+          resizeTextarea();
+
+          if (button.dataset.attach === "true") {
+            imageInput.click();
+          } else {
+            zone.focus();
+          }
+        });
+      });
+
+    /* Dictée vocale */
+
+    function setupVoice() {
+      const SpeechRecognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
+
+      if (!SpeechRecognition) {
+        voiceButton.addEventListener("click", () => {
+          alert(
+            "La dictée vocale n'est pas prise en charge par ce navigateur."
+          );
+        });
+
+        return;
+      }
+
+      recognition = new SpeechRecognition();
+
+      recognition.lang = "fr-FR";
+      recognition.continuous = false;
+      recognition.interimResults = true;
+
+      let originalText = "";
+
+      recognition.onstart = () => {
+        listening = true;
+        originalText = zone.value;
+
+        voiceButton.classList.add("active");
+        voiceButton.textContent = "⏹ Arrêter";
+      };
+
+      recognition.onresult = event => {
+        let transcript = "";
+
+        for (
+          let i = event.resultIndex;
+          i < event.results.length;
+          i++
+        ) {
+          transcript += event.results[i][0].transcript;
+        }
+
+        zone.value =
+          (originalText ? originalText + " " : "") +
+          transcript;
+
+        resizeTextarea();
+      };
+
+      recognition.onerror = event => {
+        console.warn("Erreur vocale :", event.error);
+      };
+
+      recognition.onend = () => {
+        listening = false;
+
+        voiceButton.classList.remove("active");
+        voiceButton.textContent = "🎙 Dictée";
+      };
+
+      voiceButton.addEventListener("click", () => {
+        if (sending) return;
+
+        try {
+          if (listening) {
+            recognition.stop();
+          } else {
+            recognition.start();
+          }
+        } catch (error) {
+          console.warn(error);
+        }
+      });
+    }
+
+    /* Initialisation */
+
+    document.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        closeMenu();
+        closeDialog("settingsScrim");
+        closeDialog("aboutScrim");
+      }
+    });
+
+    try {
+      if (localStorage.getItem(THEME_KEY) === "dark") {
+        document.body.classList.add("dark");
+      }
+    } catch {}
+
+    updateThemeLabel();
+
+    loadHistory();
+    renderHistory();
+    renderConversation();
+    setupVoice();
+    resizeTextarea();
+  </script>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/service-worker.js")
+          .catch(error => {
+            console.warn(
+              "Service worker indisponible :",
+              error
+            );
+          });
+      });
+    }
+  </script>
+</body>
+</html>
