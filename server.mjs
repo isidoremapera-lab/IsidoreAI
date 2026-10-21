@@ -11,6 +11,12 @@ const GEMINI_MODEL =
 const GEMINI_IMAGE_MODEL =
   process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
 
+const GEMINI_IMAGE_MODELS = [
+  process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image",
+  "gemini-2.0-flash-preview-image-generation",
+  "gemini-2.5-flash"
+];
+
 const API_KEY = process.env.GEMINI_API_KEY;
 
 const MAX_BODY_BYTES = 12 * 1024 * 1024;
@@ -317,131 +323,146 @@ async function callGeminiChat(problem, image, history = []) {
  */
 
 async function generateImage(prompt, image, referenceImage) {
-  const parts = [];
+  let lastError = null;
 
-  if (referenceImage) {
-    const ref = validateImage(referenceImage);
-    parts.push({
-      inline_data: {
-        mime_type: ref.mimeType,
-        data: ref.data
-      }
-    });
-  }
+  for (const modelName of [...new Set(GEMINI_IMAGE_MODELS)]) {
+    try {
+      const parts = [];
 
-  if (image) {
-    const img = validateImage(image);
-    parts.push({
-      inline_data: {
-        mime_type: img.mimeType,
-        data: img.data
-      }
-    });
-  }
-
-  parts.push({
-    text:
-      typeof prompt === "string" && prompt.trim()
-        ? prompt.trim()
-        : "Améliore cette image en conservant son sujet principal."
-  });
-
-  const response = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/models/" +
-      encodeURIComponent(GEMINI_IMAGE_MODEL) +
-      ":generateContent",
-    {
-      method: "POST",
-
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": API_KEY
-      },
-
-      body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts
+      if (referenceImage) {
+        const ref = validateImage(referenceImage);
+        parts.push({
+          inline_data: {
+            mime_type: ref.mimeType,
+            data: ref.data
           }
-        ],
-        generationConfig: {
-          responseModalities: ["TEXT", "IMAGE"],
-          temperature: 0.7
+        });
+      }
+
+      if (image) {
+        const img = validateImage(image);
+        parts.push({
+          inline_data: {
+            mime_type: img.mimeType,
+            data: img.data
+          }
+        });
+      }
+
+      parts.push({
+        text:
+          typeof prompt === "string" && prompt.trim()
+            ? prompt.trim()
+            : "Améliore cette image en conservant son sujet principal."
+      });
+
+      const response = await fetch(
+        "https://generativelanguage.googleapis.com/v1beta/models/" +
+          encodeURIComponent(modelName) +
+          ":generateContent",
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+            "x-goog-api-key": API_KEY
+          },
+
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts
+              }
+            ],
+            generationConfig: {
+              responseModalities: ["TEXT", "IMAGE"],
+              temperature: 0.7
+            }
+          }),
+
+          signal: AbortSignal.timeout(180000)
         }
-      }),
-
-      signal: AbortSignal.timeout(180000)
-    }
-  );
-
-  const data = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    const message =
-      data?.error?.message ||
-      "Erreur du service de génération d'images.";
-
-    if (response.status === 401 || response.status === 403) {
-      throw new Error(
-        "Accès au modèle d'images refusé. Vérifiez votre clé API, " +
-        "les autorisations et la facturation."
       );
-    }
 
-    if (response.status === 404) {
-      throw new Error(
-        "Modèle d'images inaccessible : " + GEMINI_IMAGE_MODEL +
-        ". Vérifiez son identifiant et son accès dans Google AI Studio."
-      );
-    }
+      const data = await response.json().catch(() => ({}));
 
-    if (response.status === 429) {
-      throw new Error(
-        "Limite de génération d'images atteinte."
-      );
-    }
+      if (!response.ok) {
+        const message =
+          data?.error?.message ||
+          "Erreur du service de génération d'images.";
 
-    throw new Error(message);
-  }
+        if (response.status === 401 || response.status === 403) {
+          throw new Error(
+            "Accès au modèle d'images refusé. Vérifiez votre clé API, " +
+            "les autorisations et la facturation."
+          );
+        }
 
-  let outputImage = null;
-  let outputText = "";
+        if (response.status === 404) {
+          lastError = new Error(
+            "Modèle d'images inaccessible : " + modelName
+          );
+          continue;
+        }
 
-  for (const candidate of data?.candidates || []) {
-    for (const part of candidate?.content?.parts || []) {
-      const inline = part?.inlineData || part?.inline_data;
+        if (response.status === 429) {
+          lastError = new Error(
+            "Limite de génération d'images atteinte sur " + modelName
+          );
+          continue;
+        }
 
-      if (!outputImage && inline?.data) {
-        outputImage = {
-          data: inline.data,
-          mime_type: inline.mime_type || inline.mimeType || "image/png"
+        lastError = new Error(message);
+        continue;
+      }
+
+      let outputImage = null;
+      let outputText = "";
+
+      for (const candidate of data?.candidates || []) {
+        for (const part of candidate?.content?.parts || []) {
+          const inline = part?.inlineData || part?.inline_data;
+
+          if (!outputImage && inline?.data) {
+            outputImage = {
+              data: inline.data,
+              mime_type: inline.mime_type || inline.mimeType || "image/png"
+            };
+          }
+
+          if (!outputText && typeof part?.text === "string") {
+            outputText = part.text.trim();
+          }
+        }
+      }
+
+      if (outputImage?.data) {
+        return {
+          image: {
+            data: outputImage.data,
+            mimeType:
+              outputImage.mime_type ||
+              outputImage.mimeType ||
+              "image/png"
+          },
+          text: outputText
         };
       }
 
-      if (!outputText && typeof part?.text === "string") {
-        outputText = part.text.trim();
-      }
+      lastError = new Error(
+        "Le modèle n'a renvoyé aucune image. Vérifiez que le modèle " +
+        "est accessible à votre compte Gemini."
+      );
+    } catch (error) {
+      lastError = error;
     }
   }
 
-  if (!outputImage?.data) {
-    throw new Error(
-      "Le modèle n'a renvoyé aucune image. Vérifiez que le modèle " +
-      "est accessible à votre compte Gemini."
-    );
-  }
-
-  return {
-    image: {
-      data: outputImage.data,
-      mimeType:
-        outputImage.mime_type ||
-        outputImage.mimeType ||
-        "image/png"
-    },
-    text: outputText
-  };
+  throw new Error(
+    lastError?.message ||
+    "Aucune génération d'image n'a réussi avec les modèles disponibles."
+  );
 }
 
 /*
