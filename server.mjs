@@ -277,17 +277,17 @@ async function callGeminiChat(problem, image, history = []) {
     }
 
     if (response.status === 429) {
-  console.error(
-    "[ERREUR GEMINI IMAGE 429]",
-    JSON.stringify(data, null, 2)
-  );
+      console.error(
+        "[ERREUR GEMINI IMAGE 429]",
+        JSON.stringify(data, null, 2)
+      );
 
-  throw new Error(
-    "Google refuse la génération d'images (429). " +
-    "Consultez les journaux Render pour connaître " +
-    "la cause exacte."
-  );
-}
+      throw new Error(
+        "Google refuse la génération d'images (429). " +
+        "Consultez les journaux Render pour connaître " +
+        "la cause exacte."
+      );
+    }
 
     throw new Error(message);
   }
@@ -310,38 +310,46 @@ async function callGeminiChat(problem, image, history = []) {
 /*
  * Génération et modification d'images.
  *
- * Utilise l'API Interactions de Google.
- * Le modèle d'images est indépendant du modèle de conversation.
+ * La route /v1beta/interactions est obsolète et ne correspond pas au format
+ * actuellement attendu par Gemini 2.5 Flash Image.
+ * Il faut passer par le endpoint generateContent avec un payload "contents"
+ * et un "generationConfig.responseModalities".
  */
 
 async function generateImage(prompt, image, referenceImage) {
-  const input = [];
+  const parts = [];
 
   if (referenceImage) {
     const ref = validateImage(referenceImage);
-
-    input.push({
-      type: "image",
-      mime_type: ref.mimeType,
-      data: ref.data
+    parts.push({
+      inline_data: {
+        mime_type: ref.mimeType,
+        data: ref.data
+      }
     });
   }
 
   if (image) {
-    input.push({
-      type: "image",
-      mime_type: image.mimeType,
-      data: image.data
+    const img = validateImage(image);
+    parts.push({
+      inline_data: {
+        mime_type: img.mimeType,
+        data: img.data
+      }
     });
   }
 
-  input.push({
-    type: "text",
-    text: prompt
+  parts.push({
+    text:
+      typeof prompt === "string" && prompt.trim()
+        ? prompt.trim()
+        : "Améliore cette image en conservant son sujet principal."
   });
 
   const response = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/interactions",
+    "https://generativelanguage.googleapis.com/v1beta/models/" +
+      encodeURIComponent(GEMINI_IMAGE_MODEL) +
+      ":generateContent",
     {
       method: "POST",
 
@@ -351,12 +359,16 @@ async function generateImage(prompt, image, referenceImage) {
       },
 
       body: JSON.stringify({
-        model: GEMINI_IMAGE_MODEL,
-        input,
-        response_format: [
-          { type: "text" },
-          { type: "image" }
-        ]
+        contents: [
+          {
+            role: "user",
+            parts
+          }
+        ],
+        generationConfig: {
+          responseModalities: ["TEXT", "IMAGE"],
+          temperature: 0.7
+        }
       }),
 
       signal: AbortSignal.timeout(180000)
@@ -393,25 +405,22 @@ async function generateImage(prompt, image, referenceImage) {
     throw new Error(message);
   }
 
-  let outputImage = data?.output_image || null;
-  let outputText = data?.output_text || "";
+  let outputImage = null;
+  let outputText = "";
 
-  /*
-   * Recherche également l'image dans les étapes de sortie
-   * lorsque l'API renvoie une liste de blocs.
-   */
+  for (const candidate of data?.candidates || []) {
+    for (const part of candidate?.content?.parts || []) {
+      const inline = part?.inlineData || part?.inline_data;
 
-  for (const step of data?.steps || []) {
-    for (const block of step?.content || []) {
-      if (!outputImage && block?.type === "image") {
+      if (!outputImage && inline?.data) {
         outputImage = {
-          data: block.data,
-          mime_type: block.mime_type
+          data: inline.data,
+          mime_type: inline.mime_type || inline.mimeType || "image/png"
         };
       }
 
-      if (!outputText && block?.type === "text") {
-        outputText = block.text || "";
+      if (!outputText && typeof part?.text === "string") {
+        outputText = part.text.trim();
       }
     }
   }
@@ -431,7 +440,6 @@ async function generateImage(prompt, image, referenceImage) {
         outputImage.mimeType ||
         "image/png"
     },
-
     text: outputText
   };
 }
