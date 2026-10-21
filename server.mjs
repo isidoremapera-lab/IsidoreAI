@@ -9,7 +9,7 @@ const GEMINI_MODEL =
   process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 
 const GEMINI_IMAGE_MODEL =
-  process.env.GEMINI_IMAGE_MODEL || "gemini-3.1-flash-lite-image";
+  process.env.GEMINI_IMAGE_MODEL || "gemini-2.5-flash-image";
 
 const API_KEY = process.env.GEMINI_API_KEY;
 
