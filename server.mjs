@@ -276,8 +276,7 @@ async function callGeminiChat(problem, image, history = []) {
       );
     }
 
-    
-if (response.status === 429) {
+    if (response.status === 429) {
   console.error(
     "[ERREUR GEMINI IMAGE 429]",
     JSON.stringify(data, null, 2)
