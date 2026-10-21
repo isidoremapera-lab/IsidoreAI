@@ -276,11 +276,19 @@ async function callGeminiChat(problem, image, history = []) {
       );
     }
 
-    if (response.status === 429) {
-      throw new Error(
-        "Limite d'utilisation Gemini atteinte. Réessayez plus tard."
-      );
-    }
+    
+if (response.status === 429) {
+  console.error(
+    "[ERREUR GEMINI IMAGE 429]",
+    JSON.stringify(data, null, 2)
+  );
+
+  throw new Error(
+    "Google refuse la génération d'images (429). " +
+    "Consultez les journaux Render pour connaître " +
+    "la cause exacte."
+  );
+}
 
     throw new Error(message);
   }
