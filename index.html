@@ -66,7 +66,7 @@ textarea::placeholder{color:#999}.attach-button,.voice-button,.send-button{flex:
 </header>
 <div class="scrim" id="menuScrim"></div>
 <aside class="sidebar" id="sidebar" aria-label="Menu principal">
-  <div class="sidebar-head"><div class="sidebar-title">IsidoreAI-2</div><button class="icon-button" id="closeMenu" type="button" aria-label="Fermer le menu">✕</button></div>
+  <div class="sidebar-head"><div class="sidebar-title">Isidore AI</div><button class="icon-button" id="closeMenu" type="button" aria-label="Fermer le menu">✕</button></div>
   <button class="sidebar-action" id="newChatButton" type="button"><span class="symbol">＋</span> Nouvelle conversation</button>
   <button class="sidebar-action" id="searchHistoryButton" type="button"><span class="symbol">⌕</span> Rechercher</button>
   <div class="history-heading">Historique</div><input class="search-box" id="historySearch" type="search" placeholder="Rechercher une conversation…" aria-label="Rechercher dans l’historique">
@@ -74,7 +74,7 @@ textarea::placeholder{color:#999}.attach-button,.voice-button,.send-button{flex:
   <div class="sidebar-footer"><button class="sidebar-action" id="settingsButton" type="button"><span class="symbol">⚙</span> Paramètres</button><button class="sidebar-action" id="aboutButton" type="button"><span class="symbol">ⓘ</span> À propos d’IsidoreAI</button></div>
 </aside>
 <main>
-  <section class="welcome" id="welcome"><h1>Bonjour, je suis IsidoreAI</h1><p>Que voulez-vous savoir aujourd’hui ?</p></section>
+  <section class="welcome" id="welcome"><h1>Bonjour, je suis Isidore AI</h1><p>Que voulez-vous savoir aujourd’hui ?</p></section>
   <section id="conversation" aria-live="polite"></section>
 </main>
 <div class="input-area">
@@ -160,7 +160,7 @@ try{
    const imageUrl="data:"+lastGeneratedImage.mimeType+";base64,"+lastGeneratedImage.data;
    answerElement.replaceChildren();
    if(data.text){const description=document.createElement("p");description.textContent=data.text;answerElement.appendChild(description)}
-   const img=document.createElement("img");img.className="generated-image";img.src=imageUrl;img.alt="Image générée par IsidoreAI-2";answerElement.appendChild(img);
+   const img=document.createElement("img");img.className="generated-image";img.src=imageUrl;img.alt="Image générée par Isidore AI";answerElement.appendChild(img);
    const link=document.createElement("a");link.className="image-download-link";link.href=imageUrl;link.download="isidoreai-image."+(lastGeneratedImage.mimeType.includes("jpeg")?"jpg":"png");link.textContent="⬇ Télécharger l’image";answerElement.appendChild(link);
    if(latest){latest.messages.push({role:"assistant",text:data.text||"Image générée.",time:Date.now()});latest.updatedAt=Date.now();saveConversations()}
    setImageMode(true);
