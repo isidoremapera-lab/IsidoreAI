@@ -397,14 +397,21 @@ async function generateImage(prompt, image, referenceImage) {
     }
 
     if (response.status === 429) {
-      throw new Error(
-        "Limite de génération d'images atteinte."
-      );
+  const details =
+    data?.error?.message || "Quota ou limite de requêtes dépassé.";
+
+  console.error(
+    "[ERREUR GENERATION IMAGE 429]",
+    JSON.stringify(data, null, 2)
+  );
+
+  throw new Error(
+    "Le service d'images a refusé la demande (429). " +
+    "Cause : " + details +
+    " Vérifiez les quotas dans Google AI Studio."
+  );
     }
-
-    throw new Error(message);
-  }
-
+    
   let outputImage = null;
   let outputText = "";
 
